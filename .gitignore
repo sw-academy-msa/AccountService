@@ -46,3 +46,7 @@ out/
 .keys/
 logs/
 *.log
+
+### Local project documentation ###
+# 프로젝트 문서는 로컬에서만 관리합니다.
+/docs/
