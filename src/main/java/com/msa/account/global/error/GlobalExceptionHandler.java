@@ -32,6 +32,18 @@ public class GlobalExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
+    @ExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
+    // 메서드 권한 검사에서 발생한 예외도 내부 오류가 아닌 403으로 응답합니다.
+    public ResponseEntity<ErrorResponse> handleAccessDenied(org.springframework.security.access.AccessDeniedException exception) {
+        return response(CommonErrorCode.FORBIDDEN);
+    }
+
+    @ExceptionHandler(org.springframework.security.core.AuthenticationException.class)
+    // MVC 내부 인증 실패가 공통 Exception 처리에 의해 500으로 바뀌지 않게 합니다.
+    public ResponseEntity<ErrorResponse> handleAuthentication(org.springframework.security.core.AuthenticationException exception) {
+        return response(CommonErrorCode.UNAUTHORIZED);
+    }
+
     @ExceptionHandler(BusinessException.class)
     // 도메인에서 명시적으로 발생시킨 오류의 상태와 메시지를 그대로 사용합니다.
     public ResponseEntity<ErrorResponse> handleBusinessException(BusinessException exception) {

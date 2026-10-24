@@ -42,5 +42,7 @@ out/
 !.env.example
 
 ### Runtime logs ###
+# 로컬 JWT 개인키는 저장소에 포함하지 않습니다.
+.keys/
 logs/
 *.log

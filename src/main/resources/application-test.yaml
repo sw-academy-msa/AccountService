@@ -1,4 +1,10 @@
 # Testcontainers의 일회용 DB를 사용하므로 테스트 시작 시 테이블을 생성합니다.
+# 테스트 중에는 백그라운드 삭제를 실행하지 않고 서비스를 직접 호출해 검증합니다.
+account:
+  auth:
+    cleanup:
+      enabled: false
+
 spring:
   # 통합 테스트에서는 발송 인터페이스를 대체하므로 실제 SMTP에 연결하지 않습니다.
   mail:

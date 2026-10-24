@@ -6,6 +6,7 @@ build
 out
 logs
 .env
+.keys
 .env.*
 !.env.example
 HELP.md

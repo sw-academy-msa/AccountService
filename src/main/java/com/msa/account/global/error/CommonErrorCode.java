@@ -14,6 +14,7 @@ public enum CommonErrorCode implements ErrorCode {
     MISSING_COOKIE(HttpStatus.BAD_REQUEST, "COMMON_MISSING_COOKIE", "필수 쿠키가 누락되었습니다."),
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "COMMON_UNAUTHORIZED", "인증이 필요합니다."),
     FORBIDDEN(HttpStatus.FORBIDDEN, "COMMON_FORBIDDEN", "요청을 수행할 권한이 없습니다."),
+    CSRF_REJECTED(HttpStatus.FORBIDDEN, "COMMON_CSRF_REJECTED", "CSRF 토큰을 확인해 주세요."),
     RESOURCE_NOT_FOUND(HttpStatus.NOT_FOUND, "COMMON_RESOURCE_NOT_FOUND", "요청한 리소스를 찾을 수 없습니다."),
     METHOD_NOT_ALLOWED(HttpStatus.METHOD_NOT_ALLOWED, "COMMON_METHOD_NOT_ALLOWED", "지원하지 않는 HTTP 메서드입니다."),
     NOT_ACCEPTABLE(HttpStatus.NOT_ACCEPTABLE, "COMMON_NOT_ACCEPTABLE", "요청한 응답 형식을 제공할 수 없습니다."),
