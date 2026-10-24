@@ -1,0 +1,52 @@
+# 모든 환경에서 공유하는 설정입니다. 환경별 파일에서 필요한 값을 덮어씁니다.
+spring:
+  config:
+    # 확장자가 없는 루트 .env를 properties 형식으로 읽습니다. 파일이 없어도 실행할 수 있습니다.
+    import: optional:file:./.env[.properties]
+  application:
+    name: account-service
+  profiles:
+    default: local
+    # .env의 대문자 키도 프로필 선택에 사용하고 실행 환경의 명시적 프로필을 우선합니다.
+    active: ${SPRING_PROFILES_ACTIVE:local}
+  lifecycle:
+    timeout-per-shutdown-phase: 30s
+  jpa:
+    # 컨트롤러에서 지연 로딩하지 않도록 DB 접근을 서비스 트랜잭션 안으로 제한합니다.
+    open-in-view: false
+    properties:
+      hibernate:
+        default_schema: account
+        jdbc:
+          time_zone: UTC
+  # 스키마 관리 도구 설정입니다. 개발 DDL 자동 갱신 정책은 local 파일에 있습니다.
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    default-schema: account
+    schemas: account
+    create-schemas: true
+
+# 초기 개발 정책입니다. 운영에서 요구하는 값은 환경별로 조정할 수 있습니다.
+account:
+  email-verification:
+    code-ttl: 5m
+    proof-ttl: 15m
+    resend-interval: 60s
+    max-attempts: 5
+    max-requests-per-hour: 10
+    from: ${MAIL_FROM:no-reply@stockdrop.local}
+
+server:
+  shutdown: graceful
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: never

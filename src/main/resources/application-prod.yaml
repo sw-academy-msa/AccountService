@@ -1,0 +1,50 @@
+# 운영 DB 접속 정보는 배포 환경에서 주입합니다.
+spring:
+  # 운영 SMTP 공급자와 자격증명은 배포 환경변수로 주입합니다.
+  mail:
+    host: ${MAIL_HOST}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
+    properties:
+      mail.smtp.auth: true
+      mail.smtp.starttls.enable: true
+      mail.smtp.starttls.required: true
+      mail.smtp.connectiontimeout: 3000
+      mail.smtp.timeout: 3000
+      mail.smtp.writetimeout: 3000
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: ${DB_POOL_MAX_SIZE:10}
+      minimum-idle: ${DB_POOL_MIN_IDLE:2}
+      connection-timeout: ${DB_CONNECTION_TIMEOUT_MS:30000}
+  jpa:
+    hibernate:
+      # 운영에서는 스키마를 자동 수정하지 않고 엔티티와의 일치 여부만 검사합니다.
+      ddl-auto: validate
+  output:
+    ansi:
+      enabled: never
+
+server:
+  forward-headers-strategy: native
+
+logging:
+  level:
+    com.msa.account: INFO
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,prometheus
+
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
