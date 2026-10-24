@@ -1,4 +1,4 @@
-package com.msa.account;
+package com.msa.account.global.config.database;
 
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;

@@ -1,8 +1,9 @@
 package com.msa.account.domain.verification.command.service.impl;
 
 import com.msa.account.domain.verification.command.service.VerificationEmailRenderer;
+import com.msa.account.domain.verification.enums.VerificationPurpose;
 
-import com.msa.account.domain.verification.config.EmailVerificationProperties;
+import com.msa.account.global.config.mail.EmailVerificationProperties;
 import com.msa.account.domain.verification.exception.EmailVerificationErrorCode;
 import com.msa.account.domain.verification.exception.EmailVerificationException;
 import jakarta.mail.Session;
@@ -86,5 +87,21 @@ class VerificationMailSenderImplTest {
         Files.createDirectories(output.getParent());
         Files.writeString(output, preview.html(), StandardCharsets.UTF_8);
         assertThat(preview.html()).contains("STOCKDROP", "001234");
+    }
+
+    @Test
+    // 같은 디자인을 사용하되 재설정 메일에는 가입 안내나 미치환 변수가 남지 않습니다.
+    void rendersPasswordResetPurposeInSubjectAndBody() throws Exception {
+        JavaMailSender smtp = mock(JavaMailSender.class);
+        MimeMessage message = new MimeMessage(Session.getInstance(new Properties()));
+        when(smtp.createMimeMessage()).thenReturn(message);
+        new VerificationMailSenderImpl(smtp, properties, renderer)
+                .send("buyer@example.com", "001234", expiresAt, VerificationPurpose.PASSWORD_RESET);
+        message.saveChanges();
+        assertThat(message.getSubject()).isEqualTo("[STOCKDROP] 비밀번호 재설정 인증번호");
+        MimeMultipart parts = (MimeMultipart) message.getContent();
+        assertThat(parts.getBodyPart(1).getContent().toString()).contains("비밀번호 재설정", "001234")
+                .doesNotContain("회원가입", "{{");
+        assertThat(parts.getBodyPart(0).getContent().toString()).contains("비밀번호 재설정").doesNotContain("회원가입");
     }
 }

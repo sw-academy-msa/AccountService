@@ -104,6 +104,55 @@ public class Account {
 
     public Instant getEmailVerifiedAt() { return emailVerifiedAt; }
 
+    // 본인 설정 변경은 계정 행 잠금 아래 실행합니다. 공통 수정 시각도 함께 갱신합니다.
+    public void changeName(String name, Instant now) {
+        this.name = name.trim();
+        this.updatedAt = now;
+    }
+
+    // 유지할 행은 재사용하여 동일 카테고리의 삭제·재삽입에 따른 유일 제약 충돌을 피합니다.
+    public void replaceInterests(Set<InterestCategory> categories, Instant now) {
+        interests.removeIf(interest -> !categories.contains(interest.getCategory()));
+        Set<InterestCategory> existing = getInterestCategories();
+        categories.stream().filter(category -> !existing.contains(category))
+                .forEach(category -> interests.add(new AccountInterest(this, category)));
+        this.updatedAt = now;
+    }
+
+    // 이전 개발 계정에 설정 행이 없으면 기본 상태에서 생성합니다.
+    public void changeNotifications(boolean saleStart, boolean recommendation, Instant now) {
+        if (notificationSettings == null) {
+            notificationSettings = new AccountNotificationSettings(this, saleStart, recommendation);
+        } else {
+            notificationSettings.change(saleStart, recommendation);
+        }
+        this.updatedAt = now;
+    }
+
+    // 같은 상태의 재요청은 이력과 시각을 바꾸지 않습니다. 최초 미동의는 철회로 기록하지 않습니다.
+    public void changeMarketingConsent(boolean agreed, Instant now) {
+        if (consent == null) {
+            consent = new AccountConsent(this, agreed, now);
+        } else {
+            if (consent.isMarketingAgreed() == agreed) return;
+            consent.change(agreed, now);
+        }
+        consentHistories.add(new AccountConsentHistory(this, agreed, now, "ACCOUNT_SETTINGS"));
+        this.updatedAt = now;
+    }
+
+    // 엔티티 컬렉션을 노출하지 않고 조회 DTO에 필요한 값만 반환합니다.
+    public Set<InterestCategory> getInterestCategories() {
+        return interests.stream().map(AccountInterest::getCategory).collect(Collectors.toUnmodifiableSet());
+    }
+    public AccountNotificationSettings getNotificationSettings() { return notificationSettings; }
+    public AccountConsent getConsent() { return consent; }
+
+    // 원문은 받지 않고 서비스에서 만든 BCrypt 해시로만 변경합니다.
+    public void changePasswordHash(String passwordHash) {
+        this.passwordHash = java.util.Objects.requireNonNull(passwordHash);
+    }
+
     // JPA가 조회 결과로 엔티티를 만들 때 사용하는 기본 생성자입니다.
     protected Account() {
     }

@@ -23,11 +23,15 @@ public class AccountConsentHistory {
 
     protected AccountConsentHistory() { }
 
-    // 현재는 가입 시점의 기록만 생성하며 이후 동의·철회 API에서 이력을 추가합니다.
+    // 가입 시 초기 선택과 설정 화면에서의 실제 변경을 출처로 구분합니다.
     AccountConsentHistory(Account account, boolean marketingAgreed, Instant now) {
+        this(account, marketingAgreed, now, "SIGNUP");
+    }
+
+    AccountConsentHistory(Account account, boolean marketingAgreed, Instant now, String source) {
         this.account = account;
         this.marketingAgreed = marketingAgreed;
-        this.source = "SIGNUP";
+        this.source = source;
         this.recordedAt = now;
     }
 }

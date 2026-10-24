@@ -1,4 +1,4 @@
-package com.msa.account.domain.verification.config;
+package com.msa.account.global.config.mail;
 
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;

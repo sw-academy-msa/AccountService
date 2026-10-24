@@ -9,7 +9,7 @@
 <!-- Gmail과 Outlook의 호환성을 위해 테이블 레이아웃과 인라인 스타일을 사용합니다. -->
 <body style="margin:0;padding:0;background-color:#f5f5f3;color:#222222;font-family:'Noto Sans KR','Apple SD Gothic Neo','Malgun Gothic',Arial,sans-serif;-webkit-text-size-adjust:100%;">
   <!-- 받은편지함의 미리보기 문구에 인증번호가 바로 노출되지 않게 합니다. -->
-  <div style="display:none;max-height:0;overflow:hidden;opacity:0;mso-hide:all;">새로운 발견의 시작. STOCKDROP 회원가입을 위한 이메일 인증을 완료해 주세요.</div>
+  <div style="display:none;max-height:0;overflow:hidden;opacity:0;mso-hide:all;">STOCKDROP {{purposeDescription}}을 위한 이메일 인증을 완료해 주세요.</div>
   <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%;background-color:#f5f5f3;">
     <tr>
       <td align="center" style="padding:32px 12px;">
@@ -24,8 +24,8 @@
           <tr>
             <td style="padding:36px 24px 24px;">
               <p style="margin:0 0 14px;font-size:10px;line-height:16px;letter-spacing:2px;font-weight:700;color:#858585;">YOUR NEXT DISCOVERY</p>
-              <h1 style="margin:0;font-size:27px;line-height:40px;letter-spacing:-1px;font-weight:800;color:#222222;">새로운 발견의 시작.<br>이메일을 인증해 주세요.</h1>
-              <p style="margin:18px 0 0;font-size:14px;line-height:25px;color:#666666;">STOCKDROP에 오신 것을 환영해요.<br>회원가입 화면에 아래 6자리 인증번호를 입력해 주세요.</p>
+              <h1 style="margin:0;font-size:27px;line-height:40px;letter-spacing:-1px;font-weight:800;color:#222222;">{{headline}}<br>{{action}}</h1>
+              <p style="margin:18px 0 0;font-size:14px;line-height:25px;color:#666666;">{{intro}}<br>{{instruction}}</p>
             </td>
           </tr>
           <tr>
@@ -40,13 +40,13 @@
           </tr>
           <tr>
             <td style="padding:20px 24px 32px;">
-              <p style="margin:0;font-size:12px;line-height:22px;color:#858585;">인증번호는 다른 사람에게 알려주지 마세요.<br>유효 시간이 지났다면 회원가입 화면에서 다시 요청해 주세요.</p>
+              <p style="margin:0;font-size:12px;line-height:22px;color:#858585;">인증번호는 다른 사람에게 알려주지 마세요.<br>유효 시간이 지났다면 {{screen}}에서 다시 요청해 주세요.</p>
             </td>
           </tr>
           <tr>
             <td style="padding:24px;background-color:#fafaf9;border-top:1px solid #eeeeee;">
               <p style="margin:0;font-size:12px;line-height:21px;font-weight:700;color:#555555;">직접 요청한 메일이 아닌가요?</p>
-              <p style="margin:6px 0 0;font-size:11px;line-height:20px;color:#858585;">본인이 요청하지 않았다면 이 메일을 무시해 주세요.<br>이 메일은 회원가입 이메일 인증을 위해 자동 발송되었습니다.</p>
+              <p style="margin:6px 0 0;font-size:11px;line-height:20px;color:#858585;">본인이 요청하지 않았다면 이 메일을 무시해 주세요.<br>이 메일은 {{purposeDescription}}을 위해 자동 발송되었습니다.</p>
               <p style="margin:22px 0 0;font-size:10px;line-height:16px;letter-spacing:1px;color:#999999;">STOCKDROP &nbsp; / &nbsp; NEW FINDS. LIMITED TIME.</p>
             </td>
           </tr>

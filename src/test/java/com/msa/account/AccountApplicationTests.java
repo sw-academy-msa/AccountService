@@ -1,5 +1,7 @@
 package com.msa.account;
 
+import com.msa.account.global.config.database.TestcontainersConfiguration;
+
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;

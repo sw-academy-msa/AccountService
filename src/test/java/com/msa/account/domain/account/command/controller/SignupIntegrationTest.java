@@ -1,7 +1,7 @@
 package com.msa.account.domain.account.command.controller;
 
 import com.jayway.jsonpath.JsonPath;
-import com.msa.account.TestcontainersConfiguration;
+import com.msa.account.global.config.database.TestcontainersConfiguration;
 import com.msa.account.domain.account.repository.AccountRepository;
 import com.msa.account.domain.verification.repository.EmailVerificationRepository;
 import com.msa.account.domain.verification.command.service.VerificationMailSender;

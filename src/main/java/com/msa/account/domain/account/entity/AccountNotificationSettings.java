@@ -26,6 +26,11 @@ public class AccountNotificationSettings {
         this.saleStart = saleStart;
         this.personalizedRecommendation = personalizedRecommendation;
     }
+    // 유형별 설정만 변경하며 광고 동의 상태는 별도로 유지합니다.
+    void change(boolean saleStart, boolean recommendation) {
+        this.saleStart = saleStart;
+        this.personalizedRecommendation = recommendation;
+    }
     public boolean isSaleStart() { return saleStart; }
     public boolean isPersonalizedRecommendation() { return personalizedRecommendation; }
 }

@@ -1,4 +1,4 @@
-package com.msa.account.global.config;
+package com.msa.account.global.config.openapi;
 
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;

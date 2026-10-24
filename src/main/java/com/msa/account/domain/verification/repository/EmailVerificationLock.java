@@ -16,10 +16,19 @@ public class EmailVerificationLock {
 
     // 반드시 호출자의 DB 트랜잭션 안에서 사용합니다. 종료 시 PostgreSQL이 잠금을 해제합니다.
     public void acquire(String email) {
+        acquire("account:signup-email:", email);
+    }
+
+    // 목적별 잠금 공간을 분리하여 가입 인증과 재설정 인증이 서로를 덮어쓰지 않습니다.
+    public void acquireForPasswordReset(String email) {
+        acquire("account:password-reset-email:", email);
+    }
+
+    private void acquire(String namespace, String email) {
         jdbcTemplate.execute((ConnectionCallback<Void>) connection -> {
             try (var statement = connection.prepareStatement(
                     "select pg_advisory_xact_lock(hashtextextended(?, 0))")) {
-                statement.setString(1, "account:signup-email:" + email);
+                statement.setString(1, namespace + email);
                 statement.execute();
             }
             return null;

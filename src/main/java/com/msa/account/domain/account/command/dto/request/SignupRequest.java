@@ -4,6 +4,7 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.Valid;
 import com.msa.account.domain.account.enums.InterestCategory;
 import java.util.Collections;
@@ -56,5 +57,11 @@ public record SignupRequest(
                 ? SignupNotificationSettings.disabled() : notificationSettings;
         // 생략과 명시적 null도 미동의입니다. JSON 역직렬화 전에 기본값을 정합니다.
         marketingConsent = Boolean.TRUE.equals(marketingConsent);
+    }
+
+    // 문자 수 제한과 별개로 BCrypt의 UTF-8 입력 한도를 가입 단계에서도 확인합니다.
+    @AssertTrue(message = "비밀번호는 UTF-8 기준 72바이트 이하여야 합니다.")
+    public boolean isPasswordWithinByteLimit() {
+        return password == null || password.getBytes(java.nio.charset.StandardCharsets.UTF_8).length <= 72;
     }
 }

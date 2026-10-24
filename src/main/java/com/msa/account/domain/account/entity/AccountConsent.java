@@ -32,6 +32,13 @@ public class AccountConsent {
         this.agreedAt = marketingAgreed ? now : null;
         this.updatedAt = now;
     }
+    // 각 시각은 마지막 동의·철회 발생 시각으로 보존하며 현재 여부는 boolean으로 판단합니다.
+    void change(boolean agreed, Instant now) {
+        this.marketingAgreed = agreed;
+        if (agreed) this.agreedAt = now;
+        else this.withdrawnAt = now;
+        this.updatedAt = now;
+    }
     public boolean isMarketingAgreed() { return marketingAgreed; }
     public Instant getAgreedAt() { return agreedAt; }
     public Instant getWithdrawnAt() { return withdrawnAt; }

@@ -1,5 +1,7 @@
 package com.msa.account;
 
+import com.msa.account.global.config.database.TestcontainersConfiguration;
+
 import org.springframework.boot.SpringApplication;
 
 /**
