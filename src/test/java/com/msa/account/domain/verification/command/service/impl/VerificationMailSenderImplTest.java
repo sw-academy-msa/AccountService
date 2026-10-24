@@ -1,6 +1,6 @@
-package com.msa.account.domain.verification.service.impl;
+package com.msa.account.domain.verification.command.service.impl;
 
-import com.msa.account.domain.verification.service.VerificationEmailRenderer;
+import com.msa.account.domain.verification.command.service.VerificationEmailRenderer;
 
 import com.msa.account.domain.verification.config.EmailVerificationProperties;
 import com.msa.account.domain.verification.exception.EmailVerificationErrorCode;

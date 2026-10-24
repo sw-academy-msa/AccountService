@@ -1,4 +1,4 @@
-package com.msa.account.domain.verification.service;
+package com.msa.account.domain.verification.command.service;
 
 import java.time.Instant;
 

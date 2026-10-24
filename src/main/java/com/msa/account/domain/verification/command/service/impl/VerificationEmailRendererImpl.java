@@ -1,8 +1,8 @@
-package com.msa.account.domain.verification.service.impl;
+package com.msa.account.domain.verification.command.service.impl;
 
-import com.msa.account.domain.verification.service.VerificationEmailRenderer;
+import com.msa.account.domain.verification.command.service.VerificationEmailRenderer;
 
-import com.msa.account.domain.verification.dto.response.VerificationEmailContent;
+import com.msa.account.domain.verification.command.dto.response.VerificationEmailContent;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Component;
 import java.io.IOException;

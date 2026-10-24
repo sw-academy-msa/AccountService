@@ -4,7 +4,7 @@ import com.jayway.jsonpath.JsonPath;
 import com.msa.account.TestcontainersConfiguration;
 import com.msa.account.domain.account.repository.AccountRepository;
 import com.msa.account.domain.verification.repository.EmailVerificationRepository;
-import com.msa.account.domain.verification.service.VerificationMailSender;
+import com.msa.account.domain.verification.command.service.VerificationMailSender;
 import com.msa.account.domain.verification.exception.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

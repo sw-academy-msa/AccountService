@@ -12,7 +12,7 @@ import com.msa.account.domain.verification.config.EmailVerificationProperties;
 import com.msa.account.domain.verification.entity.EmailVerification;
 import com.msa.account.domain.verification.exception.*;
 import com.msa.account.domain.verification.repository.*;
-import com.msa.account.domain.verification.service.VerificationMailSender;
+import com.msa.account.domain.verification.command.service.VerificationMailSender;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.*;
