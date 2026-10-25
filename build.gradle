@@ -22,6 +22,10 @@ repositories {
 // implementation은 실행용, testImplementation은 테스트용 의존성입니다.
 // MVC·입력 검증·JPA·보안·상태 확인·Swagger와 PostgreSQL 통합 테스트를 구성합니다.
 dependencies {
+    // 로컬 S3 호환 저장소와 운영 AWS S3에 같은 클라이언트로 접근합니다.
+    implementation platform('software.amazon.awssdk:bom:2.57.3')
+    implementation 'software.amazon.awssdk:s3'
+    implementation 'software.amazon.awssdk:url-connection-client'
 	implementation 'org.springframework.boot:spring-boot-starter-actuator'
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 	implementation 'org.springframework.boot:spring-boot-starter-flyway'

@@ -172,10 +172,15 @@ public class Account {
 
     // 이미 보유한 권한은 거절하고, 권한을 부여한 주체와 시각을 함께 기록합니다.
     public void grantRole(Role role, UUID grantedBy) {
+        grantRole(role, grantedBy, Instant.now());
+    }
+
+    // 심사와 권한 부여 시각을 동일한 서버 시계로 기록합니다.
+    public void grantRole(Role role, UUID grantedBy, Instant grantedAt) {
         if (hasRole(role)) {
             throw new AccountException(AccountErrorCode.ROLE_ALREADY_GRANTED);
         }
-        roles.add(AccountRole.grant(this, role, grantedBy, Instant.now()));
+        roles.add(AccountRole.grant(this, role, grantedBy, grantedAt));
     }
 
     // 현재 회원이 지정한 권한을 보유하는지 확인합니다.

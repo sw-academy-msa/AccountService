@@ -21,6 +21,15 @@ spring:
     ansi:
       enabled: always
 
+account:
+  seller:
+    storage:
+      endpoint: ${SELLER_S3_ENDPOINT:http://localhost:9090}
+      path-style: true
+      auto-create-bucket: true
+      access-key: local-test
+      secret-key: local-test-secret
+
 logging:
   level:
     com.msa.account: DEBUG

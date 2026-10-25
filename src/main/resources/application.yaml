@@ -11,6 +11,11 @@ spring:
     active: ${SPRING_PROFILES_ACTIVE:local}
   lifecycle:
     timeout-per-shutdown-phase: 30s
+  servlet:
+    multipart:
+      # PDF는 5MB, JSON을 포함한 전체 요청은 6MB까지 허용합니다.
+      max-file-size: 5MB
+      max-request-size: 6MB
   jpa:
     # 컨트롤러에서 지연 로딩하지 않도록 DB 접근을 서비스 트랜잭션 안으로 제한합니다.
     open-in-view: false
@@ -29,6 +34,19 @@ spring:
 
 # 초기 개발 정책입니다. 운영에서 요구하는 값은 환경별로 조정할 수 있습니다.
 account:
+  seller:
+    max-certificate-bytes: 5242880
+    data-encryption-key: ${SELLER_DATA_ENCRYPTION_KEY:}
+    storage:
+      bucket: ${SELLER_CERTIFICATE_BUCKET:stockdrop-account-certificates}
+      region: ap-northeast-2
+      endpoint: ""
+      path-style: false
+      auto-create-bucket: false
+      access-key: ""
+      secret-key: ""
+  admin:
+    bootstrap-enabled: false
   auth:
     # 초기 인증 정책이며 운영 issuer와 허용 프론트 주소는 배포 환경에서 지정합니다.
     issuer: ${JWT_ISSUER:http://localhost:8080}

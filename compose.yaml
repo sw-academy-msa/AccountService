@@ -1,5 +1,23 @@
 # 로컬 개발용 PostgreSQL입니다. 앱은 호스트의 5433 포트로 연결합니다.
 services:
+  # 로컬 전용 S3 API 에뮬레이터이며 실제 AWS 키가 필요하지 않습니다.
+  s3mock:
+    image: adobe/s3mock:5.2.3
+    container_name: stockdrop-account-s3
+    environment:
+      COM_ADOBE_TESTING_S3MOCK_STORE_ROOT: /s3mockroot
+      COM_ADOBE_TESTING_S3MOCK_STORE_RETAIN_FILES_ON_EXIT: "true"
+      COM_ADOBE_TESTING_S3MOCK_STORE_INITIAL_BUCKETS: ${SELLER_CERTIFICATE_BUCKET:-stockdrop-account-certificates}
+    ports:
+      - "127.0.0.1:9090:9090"
+    volumes:
+      - account-s3-data:/s3mockroot
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:9090/favicon.ico"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
   # 외부 메일 계정 없이 인증 메일을 확인합니다. 웹 화면은 localhost:8025입니다.
   mailpit:
     image: axllent/mailpit:v1.27
@@ -32,4 +50,5 @@ services:
     restart: unless-stopped
 
 volumes:
+  account-s3-data:
   account-postgres-data:

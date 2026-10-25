@@ -68,6 +68,13 @@ public class GlobalExceptionHandler {
                 .body(ErrorResponse.validation(traceId(), violations));
     }
 
+    @ExceptionHandler(org.springframework.web.method.annotation.HandlerMethodValidationException.class)
+    // MVC가 page·size 같은 인자를 직접 검증할 때도 입력 오류와 서버 반환값 오류를 구분합니다.
+    public ResponseEntity<ErrorResponse> handleMvcMethodValidation(
+            org.springframework.web.method.annotation.HandlerMethodValidationException exception) {
+        return response(exception.isForReturnValue() ? CommonErrorCode.INTERNAL_SERVER_ERROR : CommonErrorCode.INVALID_REQUEST);
+    }
+
     @ExceptionHandler(ConstraintViolationException.class)
     // 메서드 인자 등의 제약조건 위반을 입력 오류 응답으로 변환합니다.
     public ResponseEntity<ErrorResponse> handleConstraintViolation(ConstraintViolationException exception) {
@@ -94,7 +101,8 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(HttpMessageNotReadableException.class)
     // 잘못된 JSON이나 본문 변환 실패를 처리합니다.
     public ResponseEntity<ErrorResponse> handleUnreadableBody(HttpMessageNotReadableException exception) {
-        log.debug("Unreadable request body", exception);
+        // 예외 원문에는 비밀번호·계좌번호가 담긴 JSON이 포함될 수 있으므로 기록하지 않습니다.
+        log.debug("Unreadable request body");
         return response(CommonErrorCode.INVALID_REQUEST_BODY);
     }
 
@@ -145,6 +153,12 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleMediaTypeNotAcceptable(HttpMediaTypeNotAcceptableException exception) {
         log.debug("No acceptable response media type", exception);
         return response(CommonErrorCode.NOT_ACCEPTABLE);
+    }
+
+    @ExceptionHandler(org.springframework.web.multipart.support.MissingServletRequestPartException.class)
+    // multipart JSON·PDF 파트 누락을 서버 오류가 아닌 필수 입력 오류로 처리합니다.
+    public ResponseEntity<ErrorResponse> handleMissingPart(org.springframework.web.multipart.support.MissingServletRequestPartException exception) {
+        return response(CommonErrorCode.MISSING_PARAMETER);
     }
 
     @ExceptionHandler(MaxUploadSizeExceededException.class)
