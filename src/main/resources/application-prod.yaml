@@ -1,3 +1,19 @@
+# 운영에는 두 Eureka URL을 쉼표로 구분하여 주입합니다. EC2 교체 시 주소도 갱신해야 합니다.
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_DEFAULT_ZONE}
+    healthcheck:
+      enabled: true
+  instance:
+    # 다른 EC2에서 접근 가능한 사설 주소와 호스트 공개 포트를 광고합니다.
+    hostname: ${SERVICE_HOSTNAME}
+    prefer-ip-address: false
+    instance-id: ${spring.application.name}:${SERVICE_INSTANCE_ID}
+    non-secure-port: ${SERVICE_PORT}
+    status-page-url-path: /actuator/health
+    health-check-url-path: /actuator/health
+
 # 운영 DB 접속 정보는 배포 환경에서 주입합니다.
 spring:
   # 운영 SMTP 공급자와 자격증명은 배포 환경변수로 주입합니다.
