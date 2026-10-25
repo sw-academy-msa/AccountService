@@ -96,7 +96,7 @@ class PasswordResetIntegrationTest {
         login(csrf, OLD).andExpect(status().isUnauthorized());
         login(csrf, NEW).andExpect(status().isOk());
         // 무상태 Access JWT는 기존 정책대로 만료 전까지 유효합니다.
-        mvc.perform(get("/api/v1/auth/me").header("Authorization", "Bearer " + oldAccess)).andExpect(status().isOk());
+        mvc.perform(get("/api/v1/accounts/me").header("Authorization", "Bearer " + oldAccess)).andExpect(status().isOk());
     }
 
     @Test

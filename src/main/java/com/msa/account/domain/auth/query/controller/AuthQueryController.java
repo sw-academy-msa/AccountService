@@ -1,24 +1,20 @@
 package com.msa.account.domain.auth.query.controller;
 
 import com.msa.account.domain.auth.query.dto.response.*;
-import com.msa.account.domain.auth.query.service.AuthQueryService;
 import com.nimbusds.jose.jwk.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import org.springframework.http.*;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.web.bind.annotation.*;
 import java.time.Duration;
 import java.util.*;
 
-/** CSRF 준비, 공개키 제공, 현재 로그인 계정 조회를 제공합니다. */
+/** CSRF 준비와 공개키를 제공합니다. 본인 정보 조회는 Account API로 통일합니다. */
 @RestController
 public class AuthQueryController {
     private final RSAKey signingKey;
-    private final AuthQueryService service;
-    public AuthQueryController(RSAKey signingKey, AuthQueryService service) { this.signingKey = signingKey; this.service = service; }
+    public AuthQueryController(RSAKey signingKey) { this.signingKey = signingKey; }
 
     @GetMapping("/api/v1/auth/csrf")
     @SecurityRequirements
@@ -36,10 +32,4 @@ public class AuthQueryController {
                 .body(new JWKSet(signingKey.toPublicJWK()).toJSONObject());
     }
 
-    @GetMapping("/api/v1/auth/me")
-    @Operation(summary = "JWT로 본인 계정 조회")
-    public ResponseEntity<CurrentAccountResponse> me(@AuthenticationPrincipal Jwt jwt) {
-        return ResponseEntity.ok().cacheControl(CacheControl.noStore())
-                .body(service.currentAccount(UUID.fromString(jwt.getSubject())));
-    }
 }

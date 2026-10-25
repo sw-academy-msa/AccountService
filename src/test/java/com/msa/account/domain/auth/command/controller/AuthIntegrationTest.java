@@ -84,7 +84,7 @@ class AuthIntegrationTest {
         assertThat(tokens.count()).isEqualTo(1);
         assertThat(tokens.existsById(login.refresh().getValue())).isFalse();
         assertThat(jdbc.queryForObject("select length(hash) from account.refresh_tokens", Integer.class)).isEqualTo(64);
-        mvc.perform(get("/api/v1/auth/me").header("Authorization", "Bearer " + login.access())
+        mvc.perform(get("/api/v1/accounts/me").header("Authorization", "Bearer " + login.access())
                         .param("accountId", UUID.randomUUID().toString()))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.accountId").value(buyer.getId().toString()));
     }
@@ -272,7 +272,7 @@ class AuthIntegrationTest {
         mvc.perform(post("/api/v1/auth/logout").cookie(csrf.cookie()).header(csrf.header(), csrf.token()))
                 .andExpect(status().isNoContent());
         refresh(csrf, login.refresh()).andExpect(status().isUnauthorized());
-        mvc.perform(get("/api/v1/auth/me").header("Authorization", "Bearer " + login.access()))
+        mvc.perform(get("/api/v1/accounts/me").header("Authorization", "Bearer " + login.access()))
                 .andExpect(status().isOk());
     }
 
@@ -292,7 +292,7 @@ class AuthIntegrationTest {
         Csrf csrf = csrf();
         Login login = login(csrf);
         now.updateAndGet(time -> time.plus(properties.accessTtl()).plusSeconds(31));
-        mvc.perform(get("/api/v1/auth/me").header("Authorization", "Bearer " + login.access()))
+        mvc.perform(get("/api/v1/accounts/me").header("Authorization", "Bearer " + login.access()))
                 .andExpect(status().isUnauthorized());
         now.updateAndGet(time -> time.plus(properties.refreshTtl()));
         refresh(csrf, login.refresh()).andExpect(status().isUnauthorized());
@@ -307,7 +307,7 @@ class AuthIntegrationTest {
                     .audience(List.of(invalid.equals("audience") ? "other" : properties.audience()))
                     .claim("token_use", invalid.equals("use") ? "refresh" : "access").build();
             String jwt = encoder.encode(JwtEncoderParameters.from(claims)).getTokenValue();
-            mvc.perform(get("/api/v1/auth/me").header("Authorization", "Bearer " + jwt))
+            mvc.perform(get("/api/v1/accounts/me").header("Authorization", "Bearer " + jwt))
                     .andExpect(status().isUnauthorized());
         }
     }
@@ -332,8 +332,8 @@ class AuthIntegrationTest {
     @Test
     // 위조된 문자열·JWT 없는 본인 조회·허용하지 않은 Origin은 거절합니다.
     void rejectsInvalidAccessAndDisallowedOrigin() throws Exception {
-        mvc.perform(get("/api/v1/auth/me")).andExpect(status().isUnauthorized());
-        mvc.perform(get("/api/v1/auth/me").header("Authorization", "Bearer forged"))
+        mvc.perform(get("/api/v1/accounts/me")).andExpect(status().isUnauthorized());
+        mvc.perform(get("/api/v1/accounts/me").header("Authorization", "Bearer forged"))
                 .andExpect(status().isUnauthorized());
         mvc.perform(options("/api/v1/auth/login").header("Origin", "https://untrusted.example")
                         .header("Access-Control-Request-Method", "POST"))
