@@ -1,0 +1,60 @@
+# 로컬 Eureka에 등록합니다. 단독 개발은 EUREKA_CLIENT_ENABLED=false로 실행할 수 있습니다.
+eureka:
+  client:
+    enabled: ${EUREKA_CLIENT_ENABLED:true}
+    service-url:
+      defaultZone: ${EUREKA_DEFAULT_ZONE:http://localhost:8761/eureka/}
+    healthcheck:
+      enabled: true
+  instance:
+    hostname: ${SERVICE_HOSTNAME:localhost}
+    prefer-ip-address: false
+    instance-id: ${spring.application.name}:${SERVICE_INSTANCE_ID:${random.uuid}}
+    status-page-url-path: /actuator/info
+    health-check-url-path: /actuator/health
+
+# Docker Compose DB를 사용하는 로컬 환경입니다. 환경변수로 접속 정보를 바꿀 수 있습니다.
+spring:
+  # Mailpit SMTP 수신 포트입니다. 발송 메일은 웹 UI에서 확인합니다.
+  mail:
+    host: ${MAIL_HOST:localhost}
+    port: ${MAIL_PORT:1025}
+    properties:
+      mail.smtp.connectiontimeout: 3000
+      mail.smtp.timeout: 3000
+      mail.smtp.writetimeout: 3000
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5433/stockdrop}
+    username: ${DB_USERNAME:account}
+    password: ${DB_PASSWORD:account-local-password}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      # 개발 편의를 위해 엔티티 변경을 반영합니다. 운영용 마이그레이션을 대체하지 않습니다.
+      ddl-auto: update
+  output:
+    ansi:
+      enabled: always
+
+account:
+  seller:
+    storage:
+      endpoint: ${SELLER_S3_ENDPOINT:http://localhost:9090}
+      path-style: true
+      auto-create-bucket: true
+      access-key: local-test
+      secret-key: local-test-secret
+
+logging:
+  level:
+    com.msa.account: DEBUG
+
+springdoc:
+  api-docs:
+    enabled: true
+    path: /v3/api-docs
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui.html
+    operations-sorter: method
+    tags-sorter: alpha

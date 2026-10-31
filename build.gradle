@@ -1,0 +1,64 @@
+// Spring Boot 실행·패키징과 의존성 버전 관리를 활성화합니다.
+plugins {
+	id 'java'
+	id 'org.springframework.boot' version '4.1.1'
+	id 'io.spring.dependency-management' version '1.1.7'
+}
+
+group = 'com.msa'
+version = '0.0.1-SNAPSHOT'
+
+// 개발 환경과 CI에서 동일한 Java 21 도구 체인을 사용합니다.
+java {
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(21)
+	}
+}
+
+repositories {
+	mavenCentral()
+}
+
+// Eureka 서버와 같은 Cloud BOM으로 클라이언트의 호환 버전을 관리합니다.
+dependencyManagement {
+    imports { mavenBom 'org.springframework.cloud:spring-cloud-dependencies:2025.1.4' }
+}
+
+// implementation은 실행용, testImplementation은 테스트용 의존성입니다.
+// MVC·입력 검증·JPA·보안·상태 확인·Swagger와 PostgreSQL 통합 테스트를 구성합니다.
+dependencies {
+    // 스타터의 자동 설정으로 등록하므로 별도 EnableDiscoveryClient는 필요하지 않습니다.
+    implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-client'
+    // 로컬 S3 호환 저장소와 운영 AWS S3에 같은 클라이언트로 접근합니다.
+    implementation platform('software.amazon.awssdk:bom:2.57.3')
+    implementation 'software.amazon.awssdk:s3'
+    implementation 'software.amazon.awssdk:url-connection-client'
+	implementation 'org.springframework.boot:spring-boot-starter-actuator'
+	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+	implementation 'org.springframework.boot:spring-boot-starter-flyway'
+	implementation 'org.springframework.boot:spring-boot-starter-security'
+	implementation 'org.springframework.boot:spring-boot-starter-security-oauth2-resource-server'
+	implementation 'org.springframework.boot:spring-boot-starter-validation'
+	implementation 'org.springframework.boot:spring-boot-starter-webmvc'
+	// 인증번호를 SMTP로 전송합니다. 로컬에서는 Mailpit이 메일을 수신합니다.
+	implementation 'org.springframework.boot:spring-boot-starter-mail'
+	implementation 'org.flywaydb:flyway-database-postgresql'
+	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:3.1.1'
+	runtimeOnly 'org.postgresql:postgresql'
+	testImplementation 'org.springframework.boot:spring-boot-starter-actuator-test'
+	testImplementation 'org.springframework.boot:spring-boot-starter-data-jpa-test'
+	testImplementation 'org.springframework.boot:spring-boot-starter-flyway-test'
+	testImplementation 'org.springframework.boot:spring-boot-starter-security-oauth2-resource-server-test'
+	testImplementation 'org.springframework.boot:spring-boot-starter-security-test'
+	testImplementation 'org.springframework.boot:spring-boot-starter-validation-test'
+	testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
+	testImplementation 'org.springframework.boot:spring-boot-testcontainers'
+	testImplementation 'org.testcontainers:testcontainers-junit-jupiter'
+	testImplementation 'org.testcontainers:testcontainers-postgresql'
+	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+// JUnit Jupiter 테스트를 JUnit Platform에서 실행합니다.
+tasks.named('test') {
+	useJUnitPlatform()
+}

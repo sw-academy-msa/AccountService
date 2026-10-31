@@ -1,0 +1,89 @@
+# 모든 환경에서 공유하는 설정입니다. 환경별 파일에서 필요한 값을 덮어씁니다.
+spring:
+  config:
+    # 확장자가 없는 루트 .env를 properties 형식으로 읽습니다. 파일이 없어도 실행할 수 있습니다.
+    import: optional:file:./.env[.properties]
+  application:
+    name: account-service
+  profiles:
+    default: local
+    # .env의 대문자 키도 프로필 선택에 사용하고 실행 환경의 명시적 프로필을 우선합니다.
+    active: ${SPRING_PROFILES_ACTIVE:local}
+  lifecycle:
+    timeout-per-shutdown-phase: 30s
+  servlet:
+    multipart:
+      # PDF는 5MB, JSON을 포함한 전체 요청은 6MB까지 허용합니다.
+      max-file-size: 5MB
+      max-request-size: 6MB
+  jpa:
+    # 컨트롤러에서 지연 로딩하지 않도록 DB 접근을 서비스 트랜잭션 안으로 제한합니다.
+    open-in-view: false
+    properties:
+      hibernate:
+        default_schema: account
+        jdbc:
+          time_zone: UTC
+  # 스키마 관리 도구 설정입니다. 개발 DDL 자동 갱신 정책은 local 파일에 있습니다.
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    default-schema: account
+    schemas: account
+    create-schemas: true
+
+# 초기 개발 정책입니다. 운영에서 요구하는 값은 환경별로 조정할 수 있습니다.
+account:
+  seller:
+    max-certificate-bytes: 5242880
+    data-encryption-key: ${SELLER_DATA_ENCRYPTION_KEY:}
+    storage:
+      bucket: ${SELLER_CERTIFICATE_BUCKET:stockdrop-account-certificates}
+      region: ap-northeast-2
+      endpoint: ""
+      path-style: false
+      auto-create-bucket: false
+      access-key: ""
+      secret-key: ""
+  admin:
+    bootstrap-enabled: false
+  auth:
+    # 초기 인증 정책이며 운영 issuer와 허용 프론트 주소는 배포 환경에서 지정합니다.
+    issuer: ${JWT_ISSUER:http://localhost:8080}
+    audience: stockdrop-api
+    access-ttl: 15m
+    refresh-ttl: 14d
+    max-login-failures: 10
+    login-window: 15m
+    signing-key-location: ${JWT_SIGNING_KEY_LOCATION:}
+    cookie-secure: false
+    cookie-same-site: Lax
+    allowed-origins: ${APP_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:5173}
+    cleanup:
+      # 세션의 원래 만료 시각부터 7일 보관한 뒤 한국 시간 새벽 4시에 정리합니다.
+      enabled: true
+      retention: 7d
+      cron: "0 0 4 * * *"
+      batch-size: 100
+      max-batches: 100
+  email-verification:
+    code-ttl: 5m
+    proof-ttl: 15m
+    resend-interval: 60s
+    max-attempts: 5
+    max-requests-per-hour: 10
+    from: ${MAIL_FROM:no-reply@stockdrop.local}
+
+server:
+  shutdown: graceful
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: never

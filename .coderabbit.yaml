@@ -1,0 +1,107 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+# AccountService의 PR을 한국어로 검토하며 실제 결함과 보안·일관성 문제를 우선합니다.
+language: ko-KR
+tone_instructions: "한국어로 간결하게 설명하세요. 실제 버그와 보안·데이터 일관성 문제를 우선하고, 발생 조건과 수정 이유를 구체적으로 제시하세요. 취향에 따른 구조 변경과 동일 지적의 반복은 피하세요."
+
+reviews:
+  profile: chill
+  high_level_summary: true
+  high_level_summary_in_walkthrough: true
+  review_status: true
+  poem: false
+
+  # 기본 브랜치 외에도 develop 대상 PR을 검토하고 Draft는 제외합니다.
+  auto_review:
+    enabled: true
+    auto_incremental_review: true
+    drafts: false
+    base_branches:
+      - "^main$"
+      - "^develop$"
+
+  # 소스·설정·CI는 검토하고 생성된 파일과 바이너리만 제외합니다.
+  path_filters:
+    - "!**/build/**"
+    - "!**/.gradle/**"
+    - "!**/.idea/**"
+    - "!**/out/**"
+    - "!**/bin/**"
+    - "!**/*.class"
+    - "!gradle/wrapper/*.jar"
+
+  # AGENTS.md는 로컬에서만 관리하므로 핵심 프로젝트 규칙을 여기에 명시합니다.
+  path_instructions:
+    - path: "src/main/java/com/msa/account/**"
+      instructions: |
+        Java 21과 Spring Boot 4 기반 STOCKDROP AccountService입니다.
+        Account는 단일 배포 앱이며 account 스키마를 소유합니다.
+        Command와 Query는 논리적으로 분리하고 엔티티·Repository·DB 공유는 허용합니다.
+        물리적 CQRS 분리, 서비스 추가, 엔티티 복제를 필수 수정으로 제안하지 마세요.
+        서비스는 인터페이스와 service/impl 구현체, DTO는 request/response 구분을 유지하세요.
+        설정 클래스와 Properties는 global/config의 책임별 패키지에 둡니다.
+        역할·트랜잭션·동시성·보안 제약을 설명하는 한국어 주석의 정확성을 확인하세요.
+        인증 외에도 현재 권한, 계정 상태, 본인 소유권과 입력 검증을 확인하세요.
+        서비스 간 테이블 직접 수정·SQL JOIN은 허용하지 않습니다.
+        계좌 실존 인증·실제 정산·송금은 MVP 범위 밖입니다.
+        Kafka·Outbox는 후속 연동 단계이므로 미구현 자체를 현재 PR의 결함으로 판단하지 마세요.
+
+    - path: "src/main/java/com/msa/account/domain/auth/**"
+      instructions: |
+        Access JWT의 서명·issuer·audience·만료·token_use 검증을 확인하세요.
+        Refresh Token은 HttpOnly 쿠키에 전달하고 DB에는 해시만 저장합니다.
+        재발급의 토큰 교체, 이전 토큰 재사용 감지, 세션 폐기와 동시 요청을 확인하세요.
+        Refresh 쿠키를 사용하는 로그인·재발급·로그아웃의 CSRF 보호를 유지하세요.
+        비밀번호 변경·재설정과 전체 Refresh 세션 폐기의 원자성을 확인하세요.
+        Access JWT 즉시 회수는 현재 제공하지 않으므로 로그아웃만으로 즉시 무효화를 요구하지 마세요.
+        비밀번호·인증번호·토큰·개인정보가 응답이나 로그에 불필요하게 노출되지 않게 검토하세요.
+
+    - path: "src/main/java/com/msa/account/domain/seller/**"
+      instructions: |
+        판매자 승인, SELLER 추가, 현재 프로필 생성은 같은 DB 트랜잭션이어야 합니다.
+        기존 BUYER 권한을 유지하고 신청 당시 정보와 심사 이력은 프로필 수정으로 바꾸지 않습니다.
+        계정 잠금부터 획득하는 순서와 중복 신청·중복 심사·동시 최초 수정을 확인하세요.
+        Query에서 기존 승인 데이터 호환을 이유로 프로필을 생성하지 않도록 확인하세요.
+        계좌번호는 암호화 저장하고 조회 시 마스킹하며 원문·암호문·키를 노출하지 않습니다.
+        PDF 원문은 S3에, 메타데이터와 저장 키는 DB에 저장합니다.
+        파일 크기·형식·소유권과 운영자 권한을 확인하세요.
+        DB와 S3를 원자적 트랜잭션으로 가정하지 말고 보상 실패와 중단 시 한계를 구분하세요.
+
+    - path: "src/main/java/com/msa/account/global/config/**"
+      instructions: |
+        비밀값 하드코딩, 운영의 로컬 저장소 연결, 과도한 공개 권한을 확인하세요.
+        JWT 서명 키와 계좌 암호화 키는 운영 A/B 인스턴스가 공유해야 합니다.
+        CORS의 자격증명 허용은 명시한 Origin에만 적용하고 쿠키 보안 옵션을 환경별로 검토하세요.
+        로컬·테스트 실행에 실제 AWS 자격증명이나 실제 메일 발송을 요구하지 마세요.
+
+    - path: "src/test/**"
+      instructions: |
+        테스트 패키지는 대상 코드 구조를 따르고 외부 메일·금융 API를 실제 호출하지 않습니다.
+        테스트 DB는 Docker PostgreSQL을 사용하며 S3 테스트는 로컬 에뮬레이터를 사용할 수 있습니다.
+        인증·권한·타인 소유 데이터 접근, 중복 요청, 경합, 트랜잭션 롤백 검증을 우선하세요.
+        시간·테스트 순서에 의존하는 불안정한 검사와 불완전한 정리를 확인하세요.
+        단순 getter나 구현을 그대로 반복하는 테스트를 일괄적으로 요구하지 마세요.
+
+    - path: "src/main/resources/application*.yaml"
+      instructions: |
+        개발의 Hibernate update와 테스트의 create는 합의된 정책입니다.
+        개발 변경마다 Flyway 마이그레이션을 필수로 요구하지 말고 운영 validate 설정과 구분하세요.
+        운영 비밀값은 환경에서 주입하고 로컬의 테스트 자격증명을 실제 AWS 키로 오인하지 마세요.
+
+    - path: "compose.yaml"
+      instructions: |
+        로컬 개발용 PostgreSQL·메일함·S3 에뮬레이터 구성입니다.
+        데이터 볼륨, 포트 노출, readiness와 실제 healthcheck 도구 존재 여부를 확인하세요.
+        로컬 S3 에뮬레이터가 AWS IAM·서명 검증을 재현한다고 가정하지 마세요.
+
+    - path: "Dockerfile"
+      instructions: |
+        운영 EC2는 ARM64이므로 이미지와 의존성의 linux/arm64 지원을 확인하세요.
+        비밀키·환경 파일 포함과 실행 사용자·JVM 메모리 설정을 검토하세요.
+
+    - path: ".github/workflows/**"
+      instructions: |
+        Java 21·Gradle Wrapper·Docker 기반 검증과 최소 권한을 확인하세요.
+        PR 테스트에서 실제 AWS 자격증명·SMTP 비밀값·운영 데이터가 필요하지 않아야 합니다.
+
+chat:
+  auto_reply: true
