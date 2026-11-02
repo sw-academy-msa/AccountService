@@ -34,6 +34,15 @@ spring:
 
 # 초기 개발 정책입니다. 운영에서 요구하는 값은 환경별로 조정할 수 있습니다.
 account:
+  service-auth:
+    # 원문 비밀값은 Order만 보유하고 Account에는 기존 BCrypt 인코더의 해시만 공급합니다.
+    enabled: ${ACCOUNT_SERVICE_AUTH_ENABLED:false}
+    token-ttl: 5m
+    clients:
+      order-command-service:
+        subject: ${ORDER_SERVICE_SUBJECT:}
+        secret-hash: ${ORDER_SERVICE_SECRET_HASH:}
+        scopes: product.stock
   seller:
     max-certificate-bytes: 5242880
     data-encryption-key: ${SELLER_DATA_ENCRYPTION_KEY:}
