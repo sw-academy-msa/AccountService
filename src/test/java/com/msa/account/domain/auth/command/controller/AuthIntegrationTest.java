@@ -86,7 +86,7 @@ class AuthIntegrationTest {
         assertThat(jdbc.queryForObject("select length(hash) from account.refresh_tokens", Integer.class)).isEqualTo(64);
         mvc.perform(get("/api/v1/accounts/me").header("Authorization", "Bearer " + login.access())
                         .param("accountId", UUID.randomUUID().toString()))
-                .andExpect(status().isOk()).andExpect(jsonPath("$.accountId").value(buyer.getId().toString()));
+                .andExpect(status().isOk()).andExpect(jsonPath("$.data.accountId").value(buyer.getId().toString()));
     }
 
     @Test
@@ -239,7 +239,7 @@ class AuthIntegrationTest {
         Csrf csrf = csrf();
         Login login = login(csrf);
         var response = refresh(csrf, login.refresh()).andExpect(status().isOk())
-                .andExpect(jsonPath("$.refreshToken").doesNotExist()).andReturn().getResponse();
+                .andExpect(jsonPath("$.data.refreshToken").doesNotExist()).andReturn().getResponse();
         Cookie replacement = response.getCookie(properties.refreshCookieName());
         assertThat(replacement.getValue()).isNotEqualTo(login.refresh().getValue());
         refresh(csrf, login.refresh()).andExpect(status().isUnauthorized())
@@ -267,10 +267,10 @@ class AuthIntegrationTest {
         Csrf csrf = csrf();
         Login login = login(csrf);
         mvc.perform(post("/api/v1/auth/logout").cookie(csrf.cookie(), login.refresh()).header(csrf.header(), csrf.token()))
-                .andExpect(status().isNoContent())
+                .andExpect(status().isOk())
                 .andExpect(cookie().maxAge(properties.refreshCookieName(), 0));
         mvc.perform(post("/api/v1/auth/logout").cookie(csrf.cookie()).header(csrf.header(), csrf.token()))
-                .andExpect(status().isNoContent());
+                .andExpect(status().isOk());
         refresh(csrf, login.refresh()).andExpect(status().isUnauthorized());
         mvc.perform(get("/api/v1/accounts/me").header("Authorization", "Bearer " + login.access()))
                 .andExpect(status().isOk());
@@ -282,7 +282,7 @@ class AuthIntegrationTest {
         Csrf csrf = csrf();
         Login a = login(csrf); Login b = login(csrf);
         mvc.perform(post("/api/v1/auth/logout").cookie(csrf.cookie(), a.refresh()).header(csrf.header(), csrf.token()))
-                .andExpect(status().isNoContent());
+                .andExpect(status().isOk());
         refresh(csrf, b.refresh()).andExpect(status().isOk());
     }
 
@@ -346,13 +346,17 @@ class AuthIntegrationTest {
     // 브라우저처럼 CSRF 쿠키와 JSON의 헤더 토큰을 함께 보관합니다.
     private Csrf csrf() throws Exception {
         var response = mvc.perform(get("/api/v1/auth/csrf")).andExpect(status().isOk()).andReturn().getResponse();
-        return new Csrf(response.getCookie(properties.csrfCookieName()), JsonPath.read(response.getContentAsString(), "$.headerName"),
-                JsonPath.read(response.getContentAsString(), "$.token"));
+        return new Csrf(response.getCookie(properties.csrfCookieName()), JsonPath.read(response.getContentAsString(), "$.data.headerName"),
+                JsonPath.read(response.getContentAsString(), "$.data.token"));
     }
     private Login login(Csrf csrf) throws Exception {
         var response = postLogin(csrf, credentials()).andExpect(status().isOk())
-                .andExpect(jsonPath("$.refreshToken").doesNotExist()).andReturn().getResponse();
-        return new Login(JsonPath.read(response.getContentAsString(), "$.accessToken"), response.getCookie(properties.refreshCookieName()));
+                // 성공 포장과 쿠키·캐시 정책을 함께 확인해 JSON 변경이 인증 흐름을 깨지 않도록 합니다.
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.code").value("COMMON_SUCCESS"))
+                .andExpect(header().string("Cache-Control", "no-store"))
+                .andExpect(jsonPath("$.data.refreshToken").doesNotExist()).andReturn().getResponse();
+        return new Login(JsonPath.read(response.getContentAsString(), "$.data.accessToken"), response.getCookie(properties.refreshCookieName()));
     }
     private ResultActions postLogin(Csrf csrf, String body) throws Exception {
         return mvc.perform(post("/api/v1/auth/login").cookie(csrf.cookie()).header(csrf.header(), csrf.token())

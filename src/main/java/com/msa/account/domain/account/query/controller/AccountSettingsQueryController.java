@@ -1,4 +1,7 @@
 package com.msa.account.domain.account.query.controller;
+
+import com.msa.account.global.response.ApiResponse;
+import com.msa.account.global.response.SuccessCode;
 import com.msa.account.domain.account.query.service.AccountSettingsQueryService;
 import com.msa.account.domain.account.query.dto.response.AccountSettingsResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -15,8 +18,7 @@ public class AccountSettingsQueryController {
     public AccountSettingsQueryController(AccountSettingsQueryService service) { this.service = service; }
     @GetMapping
     @Operation(summary = "내 정보와 설정 조회")
-    public ResponseEntity<AccountSettingsResponse> get(@AuthenticationPrincipal Jwt jwt) {
-        return ResponseEntity.ok().cacheControl(CacheControl.noStore())
-                .body(service.getSettings(UUID.fromString(jwt.getSubject())));
+    public ApiResponse<AccountSettingsResponse> get(@AuthenticationPrincipal Jwt jwt) {
+        return ApiResponse.onSuccess(service.getSettings(UUID.fromString(jwt.getSubject())), SuccessCode.OK);
     }
 }

@@ -1,5 +1,8 @@
 package com.msa.account.domain.seller.command.controller;
 
+import com.msa.account.global.response.ApiResponse;
+import com.msa.account.global.response.SuccessCode;
+
 import com.msa.account.domain.seller.command.dto.request.*;
 import com.msa.account.domain.seller.command.service.SellerProfileCommandService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -21,18 +24,18 @@ public class SellerProfileCommandController {
 
     @PutMapping("/contact")
     @Operation(summary = "내 판매자 표시 이름·담당자 정보 수정", description = "회원 기본 정보와 기존 신청서는 변경하지 않습니다.")
-    public ResponseEntity<Void> contact(@AuthenticationPrincipal Jwt jwt, @Valid @RequestBody UpdateSellerContactRequest request) {
+    public ApiResponse<Void> contact(@AuthenticationPrincipal Jwt jwt, @Valid @RequestBody UpdateSellerContactRequest request) {
         service.updateContact(UUID.fromString(jwt.getSubject()), request); return done();
     }
     @PutMapping("/bank-account")
     @Operation(summary = "내 판매자 정산 계좌 수정", description = "암호화 저장만 수행하며 실제 계좌 확인·정산·송금은 하지 않습니다.")
-    public ResponseEntity<Void> bank(@AuthenticationPrincipal Jwt jwt, @Valid @RequestBody UpdateSellerBankAccountRequest request) {
+    public ApiResponse<Void> bank(@AuthenticationPrincipal Jwt jwt, @Valid @RequestBody UpdateSellerBankAccountRequest request) {
         service.updateBankAccount(UUID.fromString(jwt.getSubject()), request); return done();
     }
     @PutMapping("/addresses")
     @Operation(summary = "내 판매자 출고·반품 주소 수정")
-    public ResponseEntity<Void> addresses(@AuthenticationPrincipal Jwt jwt, @Valid @RequestBody UpdateSellerAddressesRequest request) {
+    public ApiResponse<Void> addresses(@AuthenticationPrincipal Jwt jwt, @Valid @RequestBody UpdateSellerAddressesRequest request) {
         service.updateAddresses(UUID.fromString(jwt.getSubject()), request); return done();
     }
-    private ResponseEntity<Void> done() { return ResponseEntity.noContent().cacheControl(CacheControl.noStore()).build(); }
+    private ApiResponse<Void> done() { return ApiResponse.onSuccess(null, SuccessCode.OK); }
 }

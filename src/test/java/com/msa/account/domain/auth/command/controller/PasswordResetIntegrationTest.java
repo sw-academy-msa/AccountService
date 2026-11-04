@@ -82,9 +82,9 @@ class PasswordResetIntegrationTest {
         Cookie first = login(csrf, OLD).andExpect(status().isOk()).andReturn().getResponse().getCookie(properties.refreshCookieName());
         var secondResponse = login(csrf, OLD).andExpect(status().isOk()).andReturn().getResponse();
         Cookie second = secondResponse.getCookie(properties.refreshCookieName());
-        String oldAccess = JsonPath.read(secondResponse.getContentAsString(), "$.accessToken");
+        String oldAccess = JsonPath.read(secondResponse.getContentAsString(), "$.data.accessToken");
         String proof = proof(EMAIL);
-        complete(EMAIL, proof, NEW).andExpect(status().isNoContent())
+        complete(EMAIL, proof, NEW).andExpect(status().isOk())
                 .andExpect(cookie().maxAge(properties.refreshCookieName(), 0));
         assertThat(encoder.matches(NEW, accounts.findById(buyer.getId()).orElseThrow().getPasswordHash())).isTrue();
         assertThat(jdbc.queryForObject("select count(*) from account.auth_sessions where revoked_at is not null", Long.class)).isEqualTo(2);
@@ -127,12 +127,12 @@ class PasswordResetIntegrationTest {
     void isolatesSignupAndPasswordResetCredentials() throws Exception {
         String signupResponse = post("/api/v1/auth/email-verifications", "{\"email\":\"fresh@example.com\"}")
                 .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
-        String signupId = JsonPath.read(signupResponse, "$.challengeId");
+        String signupId = JsonPath.read(signupResponse, "$.data.challengeId");
         confirm("fresh@example.com", signupId, signupCodes.get("fresh@example.com"))
                 .andExpect(status().isBadRequest());
         String signupProofResponse = post("/api/v1/auth/email-verifications/confirm", confirmBody("fresh@example.com", signupId, signupCodes.get("fresh@example.com")))
                 .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
-        complete("fresh@example.com", JsonPath.read(signupProofResponse, "$.verificationToken"), NEW)
+        complete("fresh@example.com", JsonPath.read(signupProofResponse, "$.data.verificationToken"), NEW)
                 .andExpect(status().isBadRequest());
         String resetId = request(EMAIL);
         post("/api/v1/auth/email-verifications/confirm", confirmBody(EMAIL, resetId, codes.get(EMAIL)))
@@ -141,7 +141,7 @@ class PasswordResetIntegrationTest {
         post("/api/v1/auth/signup", "{\"email\":\"" + EMAIL + "\",\"password\":\"" + NEW
                 + "\",\"name\":\"김서윤\",\"verificationToken\":\"" + resetProof + "\"}")
                 .andExpect(status().isBadRequest());
-        complete(EMAIL, resetProof, NEW).andExpect(status().isNoContent());
+        complete(EMAIL, resetProof, NEW).andExpect(status().isOk());
     }
 
     @Test
@@ -150,14 +150,14 @@ class PasswordResetIntegrationTest {
         String proof = proof(EMAIL);
         complete("other@example.com", proof, NEW).andExpect(status().isBadRequest());
         assertThat(resets.findById(EMAIL).orElseThrow().getConsumedAt()).isNull();
-        complete(" Buyer@Example.COM ", proof, NEW).andExpect(status().isNoContent());
+        complete(" Buyer@Example.COM ", proof, NEW).andExpect(status().isOk());
     }
 
     @Test
     // 이미 성공한 증명을 재사용해서 다시 비밀번호를 바꿀 수 없습니다.
     void consumesProofOnce() throws Exception {
         String proof = proof(EMAIL);
-        complete(EMAIL, proof, NEW).andExpect(status().isNoContent());
+        complete(EMAIL, proof, NEW).andExpect(status().isOk());
         complete(EMAIL, proof, "Another!789").andExpect(status().isBadRequest());
         assertThat(encoder.matches(NEW, accounts.findById(buyer.getId()).orElseThrow().getPasswordHash())).isTrue();
     }
@@ -193,7 +193,7 @@ class PasswordResetIntegrationTest {
         String nextId = request(EMAIL);
         confirm(EMAIL, oldId, codes.get(EMAIL)).andExpect(status().isBadRequest());
         complete(EMAIL, proof, NEW).andExpect(status().isBadRequest());
-        complete(EMAIL, confirmedProof(EMAIL, nextId), NEW).andExpect(status().isNoContent());
+        complete(EMAIL, confirmedProof(EMAIL, nextId), NEW).andExpect(status().isOk());
     }
 
     @Test
@@ -234,7 +234,7 @@ class PasswordResetIntegrationTest {
         try (var executor = Executors.newFixedThreadPool(2)) {
             var a = executor.submit(() -> complete(EMAIL, proof, NEW).andReturn().getResponse().getStatus());
             var b = executor.submit(() -> complete(EMAIL, proof, "Another!789").andReturn().getResponse().getStatus());
-            assertThat(List.of(a.get(20, TimeUnit.SECONDS), b.get(20, TimeUnit.SECONDS))).containsExactlyInAnyOrder(204, 400);
+            assertThat(List.of(a.get(20, TimeUnit.SECONDS), b.get(20, TimeUnit.SECONDS))).containsExactlyInAnyOrder(200, 400);
         }
     }
 
@@ -251,7 +251,7 @@ class PasswordResetIntegrationTest {
         assertThat(encoder.matches(OLD, accounts.findById(buyer.getId()).orElseThrow().getPasswordHash())).isTrue();
         assertThat(jdbc.queryForObject("select count(*) from account.auth_sessions where revoked_at is null", Long.class)).isEqualTo(1);
         reset(sessions);
-        complete(EMAIL, proof, NEW).andExpect(status().isNoContent());
+        complete(EMAIL, proof, NEW).andExpect(status().isOk());
         refresh(csrf, refresh).andExpect(status().isUnauthorized());
     }
 
@@ -259,7 +259,7 @@ class PasswordResetIntegrationTest {
     // 로그인 JWT나 Refresh Token은 재설정 전용 증명으로 사용할 수 없습니다.
     void rejectsLoginTokensAsResetProof() throws Exception {
         var response = login(csrf(), OLD).andExpect(status().isOk()).andReturn().getResponse();
-        String jwt = JsonPath.read(response.getContentAsString(), "$.accessToken");
+        String jwt = JsonPath.read(response.getContentAsString(), "$.data.accessToken");
         complete(EMAIL, jwt, NEW).andExpect(status().isBadRequest());
         complete(EMAIL, response.getCookie(properties.refreshCookieName()).getValue(), NEW).andExpect(status().isBadRequest());
     }
@@ -270,22 +270,22 @@ class PasswordResetIntegrationTest {
         Csrf csrf = csrf();
         for (int i = 0; i < properties.maxLoginFailures(); i++) login(csrf, "Wrong!123").andExpect(status().isUnauthorized());
         login(csrf, OLD).andExpect(status().isTooManyRequests());
-        complete(EMAIL, proof(EMAIL), NEW).andExpect(status().isNoContent());
+        complete(EMAIL, proof(EMAIL), NEW).andExpect(status().isOk());
         login(csrf, NEW).andExpect(status().isOk());
     }
 
     // 응답에는 실제 가입 여부·인증번호·계정 ID가 포함되지 않습니다.
     private String request(String email) throws Exception {
         var response = post("/api/v1/auth/password-resets", "{\"email\":\"" + email + "\"}")
-                .andExpect(status().isOk()).andExpect(jsonPath("$.code").doesNotExist())
-                .andExpect(jsonPath("$.accountId").doesNotExist()).andReturn().getResponse();
-        return JsonPath.read(response.getContentAsString(), "$.challengeId");
+                .andExpect(status().isOk()).andExpect(jsonPath("$.data.code").doesNotExist())
+                .andExpect(jsonPath("$.data.accountId").doesNotExist()).andReturn().getResponse();
+        return JsonPath.read(response.getContentAsString(), "$.data.challengeId");
     }
     private String proof(String email) throws Exception { return confirmedProof(email, request(email)); }
     private String confirmedProof(String email, String id) throws Exception {
         var response = confirm(email, id, codes.get(email)).andExpect(status().isOk())
-                .andExpect(jsonPath("$.verificationToken").doesNotExist()).andReturn().getResponse();
-        return JsonPath.read(response.getContentAsString(), "$.resetToken");
+                .andExpect(jsonPath("$.data.verificationToken").doesNotExist()).andReturn().getResponse();
+        return JsonPath.read(response.getContentAsString(), "$.data.resetToken");
     }
     private ResultActions confirm(String email, String id, String code) throws Exception {
         return post("/api/v1/auth/password-resets/confirm", confirmBody(email, id, code));
@@ -301,7 +301,7 @@ class PasswordResetIntegrationTest {
     }
     private Csrf csrf() throws Exception {
         var response = mvc.perform(get("/api/v1/auth/csrf")).andReturn().getResponse();
-        return new Csrf(response.getCookie(properties.csrfCookieName()), JsonPath.read(response.getContentAsString(), "$.token"));
+        return new Csrf(response.getCookie(properties.csrfCookieName()), JsonPath.read(response.getContentAsString(), "$.data.token"));
     }
     private ResultActions login(Csrf csrf, String password) throws Exception {
         return mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/api/v1/auth/login")

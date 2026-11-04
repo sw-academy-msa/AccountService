@@ -1,4 +1,7 @@
 package com.msa.account.domain.seller.query.controller;
+
+import com.msa.account.global.response.ApiResponse;
+import com.msa.account.global.response.SuccessCode;
 import com.msa.account.domain.seller.query.dto.response.SellerApplicationResponse;
 import com.msa.account.domain.seller.query.service.*;
 import io.swagger.v3.oas.annotations.Operation;
@@ -16,16 +19,16 @@ public class SellerApplicationQueryController {
         this.service=service; this.certificates=certificates;
     }
     @GetMapping("/me") @Operation(summary="내 최신 판매자 신청 조회")
-    public ResponseEntity<SellerApplicationResponse> latest(@AuthenticationPrincipal Jwt jwt) {
-        return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(service.latest(UUID.fromString(jwt.getSubject())));
+    public ApiResponse<SellerApplicationResponse> latest(@AuthenticationPrincipal Jwt jwt) {
+        return ApiResponse.onSuccess(service.latest(UUID.fromString(jwt.getSubject())), SuccessCode.OK);
     }
     @GetMapping("/me/history") @Operation(summary="내 판매자 신청 이력 조회")
-    public ResponseEntity<List<SellerApplicationResponse>> history(@AuthenticationPrincipal Jwt jwt) {
-        return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(service.history(UUID.fromString(jwt.getSubject())));
+    public ApiResponse<List<SellerApplicationResponse>> history(@AuthenticationPrincipal Jwt jwt) {
+        return ApiResponse.onSuccess(service.history(UUID.fromString(jwt.getSubject())), SuccessCode.OK);
     }
     @GetMapping("/{applicationId}") @Operation(summary="내 판매자 신청 단건 조회")
-    public ResponseEntity<SellerApplicationResponse> own(@AuthenticationPrincipal Jwt jwt,@PathVariable UUID applicationId) {
-        return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(service.own(UUID.fromString(jwt.getSubject()),applicationId));
+    public ApiResponse<SellerApplicationResponse> own(@AuthenticationPrincipal Jwt jwt,@PathVariable UUID applicationId) {
+        return ApiResponse.onSuccess(service.own(UUID.fromString(jwt.getSubject()),applicationId), SuccessCode.OK);
     }
     @GetMapping(value="/{applicationId}/certificate",produces=MediaType.APPLICATION_PDF_VALUE)
     @Operation(summary="내 사업자등록증 PDF 조회")

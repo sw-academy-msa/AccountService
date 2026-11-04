@@ -64,11 +64,11 @@ class SignupIntegrationTest {
     void signsUpWithVerifiedEmailAndDefaults() throws Exception {
         String proof = verify("buyer@example.com");
         signup(" Buyer@Example.COM ", proof, "").andExpect(status().isCreated())
-                .andExpect(jsonPath("$.email").value("buyer@example.com"))
-                .andExpect(jsonPath("$.name").value("김서윤"))
-                .andExpect(jsonPath("$.roles[0]").value("BUYER"))
-                .andExpect(jsonPath("$.emailVerifiedAt").exists())
-                .andExpect(jsonPath("$.phoneNumber").doesNotExist());
+                .andExpect(jsonPath("$.data.email").value("buyer@example.com"))
+                .andExpect(jsonPath("$.data.name").value("김서윤"))
+                .andExpect(jsonPath("$.data.roles[0]").value("BUYER"))
+                .andExpect(jsonPath("$.data.emailVerifiedAt").exists())
+                .andExpect(jsonPath("$.data.phoneNumber").doesNotExist());
         var account = accounts.findByEmail("buyer@example.com").orElseThrow();
         assertThat(encoder.matches("Password!123", account.getPasswordHash())).isTrue();
         assertThat(account.getPasswordHash()).isNotEqualTo("Password!123");
@@ -239,16 +239,16 @@ class SignupIntegrationTest {
     // 공개 API는 고정 카테고리와 MVP 알림 두 종류를 제공합니다.
     void exposesSignupOptions() throws Exception {
         mvc.perform(get("/api/v1/signup-options")).andExpect(status().isOk())
-                .andExpect(jsonPath("$.categories.length()").value(12))
-                .andExpect(jsonPath("$.notificationTypes.length()").value(2));
+                .andExpect(jsonPath("$.data.categories.length()").value(12))
+                .andExpect(jsonPath("$.data.notificationTypes.length()").value(2));
     }
 
     // 인증번호는 API 응답이 아닌 대체 메일 발송기에서 읽습니다.
     private String issue(String email) throws Exception {
         String response = postJson("/api/v1/auth/email-verifications", "{\"email\":\"" + email + "\"}")
-                .andExpect(status().isOk()).andExpect(jsonPath("$.code").doesNotExist())
+                .andExpect(status().isOk()).andExpect(jsonPath("$.data.code").doesNotExist())
                 .andReturn().getResponse().getContentAsString();
-        return JsonPath.read(response, "$.challengeId");
+        return JsonPath.read(response, "$.data.challengeId");
     }
 
     // 실제 인증 흐름을 거쳐 가입 증명을 취득합니다.
@@ -256,7 +256,7 @@ class SignupIntegrationTest {
         String challenge = issue(email);
         String response = confirm(email, challenge, codes.get(email)).andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString();
-        return JsonPath.read(response, "$.verificationToken");
+        return JsonPath.read(response, "$.data.verificationToken");
     }
 
     private ResultActions confirm(String email, String challenge, String code) throws Exception {

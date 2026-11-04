@@ -61,9 +61,9 @@ class AccountSettingsIntegrationTest {
         mvc.perform(patch(BASE).contentType(MediaType.APPLICATION_JSON).content("{\"name\":\"변경\"}"))
                 .andExpect(status().isUnauthorized());
         update("PATCH", "", "{\"name\":\"  새이름  \",\"accountId\":\"" + other.getId() + "\"}")
-                .andExpect(status().isNoContent());
-        view().andExpect(jsonPath("$.name").value("새이름"))
-                .andExpect(jsonPath("$.passwordHash").doesNotExist());
+                .andExpect(status().isOk());
+        view().andExpect(jsonPath("$.data.name").value("새이름"))
+                .andExpect(jsonPath("$.data.passwordHash").doesNotExist());
         assertThat(accounts.findById(other.getId()).orElseThrow().getName()).isEqualTo("기존이름");
     }
 
@@ -71,11 +71,11 @@ class AccountSettingsIntegrationTest {
     // 겹치는 카테고리를 유지하면서 목록을 교체하고 빈 목록으로 모두 해제할 수 있습니다.
     void replacesAndClearsInterests() throws Exception {
         String selection = "{\"interestCategories\":[\"FASHION\",\"ELECTRONICS\"]}";
-        update("PUT", "/interests", selection).andExpect(status().isNoContent());
-        update("PUT", "/interests", selection).andExpect(status().isNoContent());
-        view().andExpect(jsonPath("$.interestCategories.length()").value(2));
-        update("PUT", "/interests", "{\"interestCategories\":[]}").andExpect(status().isNoContent());
-        view().andExpect(jsonPath("$.interestCategories").isEmpty());
+        update("PUT", "/interests", selection).andExpect(status().isOk());
+        update("PUT", "/interests", selection).andExpect(status().isOk());
+        view().andExpect(jsonPath("$.data.interestCategories.length()").value(2));
+        update("PUT", "/interests", "{\"interestCategories\":[]}").andExpect(status().isOk());
+        view().andExpect(jsonPath("$.data.interestCategories").isEmpty());
     }
 
     @Test
@@ -87,24 +87,24 @@ class AccountSettingsIntegrationTest {
             update("PUT", "/interests", body).andExpect(status().isBadRequest());
         update("PUT", "/notification-settings", "{\"saleStart\":true}").andExpect(status().isBadRequest());
         update("PUT", "/marketing-consent", "{}").andExpect(status().isBadRequest());
-        view().andExpect(jsonPath("$.interestCategories.length()").value(1))
-                .andExpect(jsonPath("$.marketingConsent.agreed").value(true));
+        view().andExpect(jsonPath("$.data.interestCategories.length()").value(1))
+                .andExpect(jsonPath("$.data.marketingConsent.agreed").value(true));
     }
 
     @Test
     // 철회와 재동의는 실제 변경마다 기록하고 동일 요청은 중복 기록하지 않습니다.
     void tracksConsentChangesSeparatelyFromNotifications() throws Exception {
-        update("PUT", "/marketing-consent", "{\"marketingConsent\":false}").andExpect(status().isNoContent());
-        update("PUT", "/marketing-consent", "{\"marketingConsent\":false}").andExpect(status().isNoContent());
-        view().andExpect(jsonPath("$.marketingConsent.agreed").value(false))
-                .andExpect(jsonPath("$.marketingConsent.withdrawnAt").isNotEmpty())
-                .andExpect(jsonPath("$.notificationSettings.saleStart").value(true));
+        update("PUT", "/marketing-consent", "{\"marketingConsent\":false}").andExpect(status().isOk());
+        update("PUT", "/marketing-consent", "{\"marketingConsent\":false}").andExpect(status().isOk());
+        view().andExpect(jsonPath("$.data.marketingConsent.agreed").value(false))
+                .andExpect(jsonPath("$.data.marketingConsent.withdrawnAt").isNotEmpty())
+                .andExpect(jsonPath("$.data.notificationSettings.saleStart").value(true));
         assertThat(historyCount()).isEqualTo(2);
-        update("PUT", "/marketing-consent", "{\"marketingConsent\":true}").andExpect(status().isNoContent());
+        update("PUT", "/marketing-consent", "{\"marketingConsent\":true}").andExpect(status().isOk());
         update("PUT", "/notification-settings", "{\"saleStart\":false,\"personalizedRecommendation\":false}")
-                .andExpect(status().isNoContent());
-        view().andExpect(jsonPath("$.marketingConsent.agreed").value(true))
-                .andExpect(jsonPath("$.notificationSettings.saleStart").value(false));
+                .andExpect(status().isOk());
+        view().andExpect(jsonPath("$.data.marketingConsent.agreed").value(true))
+                .andExpect(jsonPath("$.data.notificationSettings.saleStart").value(false));
         assertThat(historyCount()).isEqualTo(3);
     }
 
@@ -120,7 +120,7 @@ class AccountSettingsIntegrationTest {
             };
             var a = executor.submit(task); var b = executor.submit(task); gate.countDown();
             assertThat(List.of(a.get(20, TimeUnit.SECONDS), b.get(20, TimeUnit.SECONDS)))
-                    .containsExactly(204, 204);
+                    .containsExactly(200, 200);
         }
         assertThat(historyCount()).isEqualTo(2);
     }
@@ -145,7 +145,7 @@ class AccountSettingsIntegrationTest {
         update("PUT", "/password", "{\"currentPassword\":\"Password!123\",\"newPassword\":\"short\"}")
                 .andExpect(status().isBadRequest());
         update("PUT", "/password", "{\"currentPassword\":\"Password!123\",\"newPassword\":\"Changed!456\"}")
-                .andExpect(status().isNoContent());
+                .andExpect(status().isOk());
         assertThat(activeSessions()).isZero();
         assertThat(encoder.matches("Changed!456", accounts.findById(buyer.getId()).orElseThrow().getPasswordHash())).isTrue();
         assertThat(encoder.matches("Password!123", accounts.findById(other.getId()).orElseThrow().getPasswordHash())).isTrue();
