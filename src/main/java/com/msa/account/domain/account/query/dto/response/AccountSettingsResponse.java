@@ -39,4 +39,10 @@ public record AccountSettingsResponse(UUID accountId, String email, String name,
             return "AccountSettingsResponseBuilder[REDACTED]";
         }
     }
+
+    /** 완성된 응답도 빌더와 동일하게 가려 로그에 이메일과 이름이 노출되지 않도록 합니다. */
+    @Override
+    public String toString() {
+        return "AccountSettingsResponse[REDACTED]";
+    }
 }
