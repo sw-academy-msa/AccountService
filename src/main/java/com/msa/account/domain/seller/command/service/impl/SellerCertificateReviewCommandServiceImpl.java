@@ -29,7 +29,11 @@ public class SellerCertificateReviewCommandServiceImpl implements SellerCertific
         var file=certificates.findById(applicationId).orElseThrow(this::notFound);
         var content=new CertificateContent(file.getFileName(),storage.get(file.getObjectKey()));
         if(!reviews.existsByApplicationIdAndReviewerId(applicationId,adminId))
-            reviews.save(new SellerCertificateReview(applicationId,adminId,clock.instant()));
+            reviews.save(SellerCertificateReview.builder()
+                .applicationId(applicationId)
+                .reviewerId(adminId)
+                .now(clock.instant())
+                .build());
         return content;
     }
     private SellerException notFound() { return new SellerException(SellerErrorCode.APPLICATION_NOT_FOUND); }

@@ -1,5 +1,8 @@
 package com.msa.account.domain.seller.query.controller;
 
+import com.msa.account.global.response.ApiResponse;
+import com.msa.account.global.response.SuccessCode;
+
 import com.msa.account.domain.seller.query.dto.response.SellerProfileResponse;
 import com.msa.account.domain.seller.query.service.SellerProfileQueryService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -20,7 +23,7 @@ public class SellerProfileQueryController {
 
     @GetMapping
     @Operation(summary = "내 판매자 마이페이지 정보 조회")
-    public ResponseEntity<SellerProfileResponse> get(@AuthenticationPrincipal Jwt jwt) {
-        return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(service.get(UUID.fromString(jwt.getSubject())));
+    public ApiResponse<SellerProfileResponse> get(@AuthenticationPrincipal Jwt jwt) {
+        return ApiResponse.onSuccess(service.get(UUID.fromString(jwt.getSubject())), SuccessCode.OK);
     }
 }

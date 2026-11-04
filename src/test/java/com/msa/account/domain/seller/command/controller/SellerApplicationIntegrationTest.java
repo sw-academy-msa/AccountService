@@ -79,9 +79,9 @@ class SellerApplicationIntegrationTest {
     void submitsAndShowsOnlyMaskedDetails() throws Exception {
         String id=submit();
         mvc.perform(get(BASE+"/me").with(as(buyer,false))).andExpect(status().isOk())
-                .andExpect(jsonPath("$.applicationId").value(id)).andExpect(jsonPath("$.status").value("PENDING"))
-                .andExpect(jsonPath("$.attemptNumber").value(1)).andExpect(jsonPath("$.maskedBankAccount").value("***5678"))
-                .andExpect(jsonPath("$.bankAccountNumber").doesNotExist()).andExpect(jsonPath("$.objectKey").doesNotExist());
+                .andExpect(jsonPath("$.data.applicationId").value(id)).andExpect(jsonPath("$.data.status").value("PENDING"))
+                .andExpect(jsonPath("$.data.attemptNumber").value(1)).andExpect(jsonPath("$.data.maskedBankAccount").value("***5678"))
+                .andExpect(jsonPath("$.data.bankAccountNumber").doesNotExist()).andExpect(jsonPath("$.data.objectKey").doesNotExist());
         String encrypted=jdbc.queryForObject("select bank_account_encrypted from account.seller_applications where id=?",
                 String.class,UUID.fromString(id));
         assertThat(encrypted).startsWith("v1:").doesNotContain("00012345678");
@@ -117,10 +117,10 @@ class SellerApplicationIntegrationTest {
         String id=submit();
         approve(admin,id).andExpect(status().isConflict()).andExpect(jsonPath("$.code").value("SELLER_CERTIFICATE_REVIEW_REQUIRED"));
         read(admin,id).andExpect(status().isOk());
-        mvc.perform(get(ADMIN+"/"+id).with(as(admin,true))).andExpect(jsonPath("$.certificateReviewed").value(true));
+        mvc.perform(get(ADMIN+"/"+id).with(as(admin,true))).andExpect(jsonPath("$.data.certificateReviewed").value(true));
         approve(secondAdmin,id).andExpect(status().isConflict());
-        approve(admin,id).andExpect(status().isNoContent());
-        approve(admin,id).andExpect(status().isNoContent());
+        approve(admin,id).andExpect(status().isOk());
+        approve(admin,id).andExpect(status().isOk());
         assertThat(roleCount(buyer,Role.BUYER)).isEqualTo(1);
         assertThat(roleCount(buyer,Role.SELLER)).isEqualTo(1);
         assertThat(jdbc.queryForObject("select granted_by from account.account_roles where account_id=? and role='SELLER'",
@@ -131,14 +131,14 @@ class SellerApplicationIntegrationTest {
     @Test
     void preservesRejectedHistoryAndAllowsNewAttempt() throws Exception {
         String old=submit();
-        reject(admin,old,"서류를 다시 제출해 주세요.").andExpect(status().isNoContent());
-        reject(admin,old,"서류를 다시 제출해 주세요.").andExpect(status().isNoContent());
-        mvc.perform(get(BASE+"/me").with(as(buyer,false))).andExpect(jsonPath("$.rejectionReason").value("서류를 다시 제출해 주세요."));
+        reject(admin,old,"서류를 다시 제출해 주세요.").andExpect(status().isOk());
+        reject(admin,old,"서류를 다시 제출해 주세요.").andExpect(status().isOk());
+        mvc.perform(get(BASE+"/me").with(as(buyer,false))).andExpect(jsonPath("$.data.rejectionReason").value("서류를 다시 제출해 주세요."));
         String next=submit();
         assertThat(next).isNotEqualTo(old);
-        mvc.perform(get(BASE+"/me").with(as(buyer,false))).andExpect(jsonPath("$.attemptNumber").value(2))
-                .andExpect(jsonPath("$.status").value("PENDING"));
-        mvc.perform(get(BASE+"/me/history").with(as(buyer,false))).andExpect(jsonPath("$.length()").value(2));
+        mvc.perform(get(BASE+"/me").with(as(buyer,false))).andExpect(jsonPath("$.data.attemptNumber").value(2))
+                .andExpect(jsonPath("$.data.status").value("PENDING"));
+        mvc.perform(get(BASE+"/me/history").with(as(buyer,false))).andExpect(jsonPath("$.data.length()").value(2));
         read(admin,old).andExpect(status().isOk());
         approve(admin,old).andExpect(status().isConflict());
         assertThat(roleCount(buyer,Role.SELLER)).isZero();
@@ -167,7 +167,7 @@ class SellerApplicationIntegrationTest {
         mvc.perform(get(ADMIN).with(as(admin,true)).param("page","-1")).andExpect(status().isBadRequest());
         mvc.perform(get(ADMIN).with(as(admin,true)).param("size","101")).andExpect(status().isBadRequest());
         mvc.perform(get(ADMIN).with(as(admin,true)).param("status","PENDING"))
-                .andExpect(status().isOk()).andExpect(jsonPath("$.totalElements").value(1));
+                .andExpect(status().isOk()).andExpect(jsonPath("$.data.totalElements").value(1));
     }
 
     @Test
@@ -206,7 +206,7 @@ class SellerApplicationIntegrationTest {
         try {
             approve(admin,id).andExpect(status().isConflict());
             assertThat(roleCount(buyer,Role.SELLER)).isZero();
-            mvc.perform(get(BASE+"/me").with(as(buyer,false))).andExpect(jsonPath("$.status").value("PENDING"));
+            mvc.perform(get(BASE+"/me").with(as(buyer,false))).andExpect(jsonPath("$.data.status").value("PENDING"));
         } finally { jdbc.execute("alter table account.seller_applications drop constraint test_no_approval"); }
     }
 
@@ -223,7 +223,7 @@ class SellerApplicationIntegrationTest {
         String id=submit(); read(admin,id).andExpect(status().isOk());
         var statuses=together(()->approve(admin,id).andReturn().getResponse().getStatus(),
                 ()->reject(secondAdmin,id,"서류 확인 필요").andReturn().getResponse().getStatus());
-        assertThat(statuses).containsExactlyInAnyOrder(204,409);
+        assertThat(statuses).containsExactlyInAnyOrder(200,409);
         SellerApplication app=applications.findById(UUID.fromString(id)).orElseThrow();
         assertThat(roleCount(buyer,Role.SELLER)).isEqualTo(app.getStatus().name().equals("APPROVED")?1:0);
     }
@@ -255,7 +255,7 @@ class SellerApplicationIntegrationTest {
     }
     private String submit() throws Exception {
         var response=upload(buyer,JSON,pdf()).andExpect(status().isCreated()).andReturn().getResponse();
-        return JsonPath.read(response.getContentAsString(),"$.applicationId");
+        return JsonPath.read(response.getContentAsString(),"$.data.applicationId");
     }
     private ResultActions read(Account a,String id) throws Exception {
         return mvc.perform(post(ADMIN+"/"+id+"/certificate-review").with(as(a,true)));

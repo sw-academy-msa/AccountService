@@ -33,7 +33,10 @@ public class PasswordResetVerificationServiceImpl implements PasswordResetVerifi
     public EmailVerificationResponse request(EmailVerificationRequest request) {
         String email = normalize(request.email());
         lock.acquireForPasswordReset(email);
-        var verification = repository.findById(email).orElseGet(() -> new PasswordResetVerification(email, clock.instant()));
+        var verification = repository.findById(email).orElseGet(() -> PasswordResetVerification.builder()
+                .email(email)
+                .now(clock.instant())
+                .build());
         var accountId = accounts.findByEmail(email).filter(account -> account.getStatus() == AccountStatus.ACTIVE
                 && account.getEmailVerifiedAt() != null).map(account -> account.getId()).orElse(null);
         var issued = challenges.issue(verification);

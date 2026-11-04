@@ -34,7 +34,10 @@ public class EmailVerificationServiceImpl implements EmailVerificationService {
         String email = normalize(request.email());
         lock.acquire(email);
         if (accounts.existsByEmail(email)) throw new AccountException(AccountErrorCode.EMAIL_ALREADY_EXISTS);
-        var verification = repository.findById(email).orElseGet(() -> new EmailVerification(email, clock.instant()));
+        var verification = repository.findById(email).orElseGet(() -> EmailVerification.builder()
+                .email(email)
+                .now(clock.instant())
+                .build());
         var issued = challenges.issue(verification);
         repository.saveAndFlush(verification);
         // 기존 가입 인증은 발송 실패 시 전체 발급 상태를 롤백하는 정책을 유지합니다.

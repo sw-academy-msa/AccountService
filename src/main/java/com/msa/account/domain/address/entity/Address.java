@@ -1,5 +1,7 @@
 package com.msa.account.domain.address.entity;
 
+import lombok.Builder;
+
 import com.msa.account.domain.account.entity.Account;
 import com.msa.account.domain.address.command.dto.request.AddressRequest;
 import jakarta.persistence.*;
@@ -42,6 +44,8 @@ public class Address {
 
     protected Address() { }
 
+    // 기존 생성자의 기본 상태·정규화·검증을 거치는 인자만 빌더로 노출합니다.
+    @Builder
     public Address(Account owner, AddressRequest request, boolean defaultAddress, Instant now) {
         this.account = owner; this.defaultAddress = defaultAddress; this.createdAt = now;
         update(request, now);
@@ -72,4 +76,12 @@ public class Address {
     public boolean isDefaultAddress() { return defaultAddress; }
     public Instant getCreatedAt() { return createdAt; }
     public Instant getUpdatedAt() { return updatedAt; }
+
+    /** 생성 중인 개인정보·토큰·계좌·해시는 문자열 출력에 포함하지 않습니다. */
+    public static class AddressBuilder {
+        @Override
+        public String toString() {
+            return "AddressBuilder[REDACTED]";
+        }
+    }
 }

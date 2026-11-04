@@ -1,5 +1,8 @@
 package com.msa.account.domain.auth.query.controller;
 
+import com.msa.account.global.response.ApiResponse;
+import com.msa.account.global.response.SuccessCode;
+
 import com.msa.account.domain.auth.query.dto.response.*;
 import com.nimbusds.jose.jwk.*;
 import io.swagger.v3.oas.annotations.Operation;
@@ -19,9 +22,8 @@ public class AuthQueryController {
     @GetMapping("/api/v1/auth/csrf")
     @SecurityRequirements
     @Operation(summary = "로그인 전 CSRF 토큰 준비", description = "쿠키를 보관하고 token 값을 headerName 헤더에 넣어 로그인·재발급·로그아웃에 보냅니다.")
-    public ResponseEntity<CsrfResponse> csrf(CsrfToken token) {
-        return ResponseEntity.ok().cacheControl(CacheControl.noStore())
-                .body(new CsrfResponse(token.getHeaderName(), token.getToken()));
+    public ApiResponse<CsrfResponse> csrf(CsrfToken token) {
+        return ApiResponse.onSuccess(new CsrfResponse(token.getHeaderName(), token.getToken()), SuccessCode.OK);
     }
 
     @GetMapping("/.well-known/jwks.json")

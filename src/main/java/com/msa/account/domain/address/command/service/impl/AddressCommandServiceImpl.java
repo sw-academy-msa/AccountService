@@ -26,7 +26,12 @@ public class AddressCommandServiceImpl implements AddressCommandService {
     public AddressCreatedResponse create(UUID accountId, AddressRequest request) {
         var owner = access.requireBuyerForUpdate(accountId);
         boolean first = addresses.countByAccountId(accountId) == 0;
-        var address = addresses.save(new Address(owner, request, first, clock.instant()));
+        var address = addresses.save(Address.builder()
+                .owner(owner)
+                .request(request)
+                .defaultAddress(first)
+                .now(clock.instant())
+                .build());
         return new AddressCreatedResponse(address.getId(), address.isDefaultAddress());
     }
     @Override

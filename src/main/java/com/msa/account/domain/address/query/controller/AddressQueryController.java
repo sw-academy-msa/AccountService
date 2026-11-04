@@ -1,5 +1,8 @@
 package com.msa.account.domain.address.query.controller;
 
+import com.msa.account.global.response.ApiResponse;
+import com.msa.account.global.response.SuccessCode;
+
 import com.msa.account.domain.address.query.dto.response.AddressResponse;
 import com.msa.account.domain.address.query.service.AddressQueryService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -17,14 +20,12 @@ public class AddressQueryController {
     public AddressQueryController(AddressQueryService service) { this.service = service; }
     @GetMapping
     @Operation(summary = "내 배송지 목록 조회", description = "기본 배송지가 먼저 표시됩니다.")
-    public ResponseEntity<List<AddressResponse>> list(@AuthenticationPrincipal Jwt jwt) {
-        return ResponseEntity.ok().cacheControl(CacheControl.noStore())
-                .body(service.list(UUID.fromString(jwt.getSubject())));
+    public ApiResponse<List<AddressResponse>> list(@AuthenticationPrincipal Jwt jwt) {
+        return ApiResponse.onSuccess(service.list(UUID.fromString(jwt.getSubject())), SuccessCode.OK);
     }
     @GetMapping("/{addressId}")
     @Operation(summary = "내 배송지 단건 조회")
-    public ResponseEntity<AddressResponse> get(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID addressId) {
-        return ResponseEntity.ok().cacheControl(CacheControl.noStore())
-                .body(service.get(UUID.fromString(jwt.getSubject()), addressId));
+    public ApiResponse<AddressResponse> get(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID addressId) {
+        return ApiResponse.onSuccess(service.get(UUID.fromString(jwt.getSubject()), addressId), SuccessCode.OK);
     }
 }

@@ -1,5 +1,8 @@
 package com.msa.account.domain.account.query.controller;
 
+import com.msa.account.global.response.ApiResponse;
+import com.msa.account.global.response.SuccessCode;
+
 import com.msa.account.domain.account.query.dto.response.SignupOptionsResponse;
 import com.msa.account.domain.account.query.service.AccountQueryService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -16,5 +19,5 @@ public class AccountQueryController {
 
     @GetMapping
     @Operation(summary = "회원가입 선택 항목 조회")
-    public SignupOptionsResponse signupOptions() { return service.signupOptions(); }
+    public ApiResponse<SignupOptionsResponse> signupOptions() { return ApiResponse.onSuccess(service.signupOptions(), SuccessCode.OK); }
 }

@@ -1,5 +1,7 @@
 package com.msa.account.domain.account.entity;
 
+import lombok.Builder;
+
 import jakarta.persistence.*;
 import org.hibernate.annotations.UuidGenerator;
 import java.time.Instant;
@@ -28,10 +30,23 @@ public class AccountConsentHistory {
         this(account, marketingAgreed, now, "SIGNUP");
     }
 
+    // 기존 생성자의 기본 상태·정규화·검증을 거치는 인자만 빌더로 노출합니다.
+    @Builder(access = lombok.AccessLevel.PACKAGE)
     AccountConsentHistory(Account account, boolean marketingAgreed, Instant now, String source) {
         this.account = account;
         this.marketingAgreed = marketingAgreed;
         this.source = source;
         this.recordedAt = now;
+    }
+
+    /** 생성 중인 개인정보·토큰·계좌·해시는 문자열 출력에 포함하지 않습니다. */
+    static class AccountConsentHistoryBuilder {
+        // 가입 이력의 기본 출처를 유지하고 설정 변경에서만 명시적으로 덮어씁니다.
+        private String source = "SIGNUP";
+
+        @Override
+        public String toString() {
+            return "AccountConsentHistoryBuilder[REDACTED]";
+        }
     }
 }

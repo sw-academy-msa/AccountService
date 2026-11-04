@@ -1,5 +1,8 @@
 package com.msa.account.domain.verification.command.controller;
 
+import com.msa.account.global.response.ApiResponse;
+import com.msa.account.global.response.SuccessCode;
+
 import com.msa.account.domain.verification.command.dto.request.EmailVerificationRequest;
 import com.msa.account.domain.verification.command.dto.request.EmailVerificationConfirmRequest;
 import com.msa.account.domain.verification.command.dto.response.EmailVerificationResponse;
@@ -22,13 +25,13 @@ public class EmailVerificationController {
 
     @PostMapping
     @Operation(summary = "가입 인증번호 발송", description = "인증번호는 메일로만 전송됩니다.")
-    public EmailVerificationResponse request(@Valid @RequestBody EmailVerificationRequest request) {
-        return service.request(request);
+    public ApiResponse<EmailVerificationResponse> request(@Valid @RequestBody EmailVerificationRequest request) {
+        return ApiResponse.onSuccess(service.request(request), SuccessCode.OK);
     }
 
     @PostMapping("/confirm")
     @Operation(summary = "인증번호 확인", description = "성공 시 가입 전용 일회용 verificationToken을 반환합니다.")
-    public EmailVerificationProofResponse confirm(@Valid @RequestBody EmailVerificationConfirmRequest request) {
-        return service.confirm(request);
+    public ApiResponse<EmailVerificationProofResponse> confirm(@Valid @RequestBody EmailVerificationConfirmRequest request) {
+        return ApiResponse.onSuccess(service.confirm(request), SuccessCode.OK);
     }
 }

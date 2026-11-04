@@ -1,4 +1,7 @@
 package com.msa.account.domain.admin.query.controller;
+
+import com.msa.account.global.response.ApiResponse;
+import com.msa.account.global.response.SuccessCode;
 import com.msa.account.domain.seller.enums.SellerApplicationStatus;
 import com.msa.account.domain.seller.query.dto.response.*;
 import com.msa.account.domain.seller.query.service.*;
@@ -20,15 +23,14 @@ public class SellerReviewQueryController {
         this.service=service;
     }
     @GetMapping @Operation(summary="운영자 판매자 신청 목록",description="status로 PENDING·APPROVED·REJECTED를 선택합니다.")
-    public ResponseEntity<SellerApplicationPageResponse> list(@AuthenticationPrincipal Jwt jwt,
+    public ApiResponse<SellerApplicationPageResponse> list(@AuthenticationPrincipal Jwt jwt,
             @RequestParam(required=false) SellerApplicationStatus status,
             @RequestParam(defaultValue="0") @Min(0) int page,
             @RequestParam(defaultValue="20") @Min(1) @Max(100) int size) {
-        return ResponseEntity.ok().cacheControl(CacheControl.noStore())
-                .body(service.list(UUID.fromString(jwt.getSubject()),status,page,size));
+        return ApiResponse.onSuccess(service.list(UUID.fromString(jwt.getSubject()),status,page,size), SuccessCode.OK);
     }
     @GetMapping("/{applicationId}") @Operation(summary="운영자 판매자 신청 상세")
-    public ResponseEntity<SellerApplicationResponse> detail(@AuthenticationPrincipal Jwt jwt,@PathVariable UUID applicationId) {
-        return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(service.detail(UUID.fromString(jwt.getSubject()),applicationId));
+    public ApiResponse<SellerApplicationResponse> detail(@AuthenticationPrincipal Jwt jwt,@PathVariable UUID applicationId) {
+        return ApiResponse.onSuccess(service.detail(UUID.fromString(jwt.getSubject()),applicationId), SuccessCode.OK);
     }
 }

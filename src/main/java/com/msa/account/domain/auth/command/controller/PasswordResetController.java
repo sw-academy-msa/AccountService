@@ -1,5 +1,8 @@
 package com.msa.account.domain.auth.command.controller;
 
+import com.msa.account.global.response.ApiResponse;
+import com.msa.account.global.response.SuccessCode;
+
 import com.msa.account.domain.auth.command.dto.request.*;
 import com.msa.account.domain.auth.command.dto.response.PasswordResetProofResponse;
 import com.msa.account.domain.auth.command.service.PasswordResetService;
@@ -23,19 +26,19 @@ public class PasswordResetController {
     }
     @PostMapping
     @Operation(summary = "비밀번호 재설정 인증번호 요청", description = "가입 여부와 무관하게 같은 응답을 반환하며 유효한 계정에만 메일을 보냅니다.")
-    public ResponseEntity<EmailVerificationResponse> request(@Valid @RequestBody PasswordResetRequest request) {
-        return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(service.request(request));
+    public ApiResponse<EmailVerificationResponse> request(@Valid @RequestBody PasswordResetRequest request) {
+        return ApiResponse.onSuccess(service.request(request), SuccessCode.OK);
     }
     @PostMapping("/confirm")
     @Operation(summary = "비밀번호 재설정 인증번호 확인", description = "가입용 토큰과 교환할 수 없는 일회용 resetToken을 반환합니다.")
-    public ResponseEntity<PasswordResetProofResponse> confirm(@Valid @RequestBody PasswordResetConfirmRequest request) {
-        return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(service.confirm(request));
+    public ApiResponse<PasswordResetProofResponse> confirm(@Valid @RequestBody PasswordResetConfirmRequest request) {
+        return ApiResponse.onSuccess(service.confirm(request), SuccessCode.OK);
     }
     @PostMapping("/complete")
     @Operation(summary = "새 비밀번호 저장", description = "증명 소비와 모든 Refresh 세션 폐기를 함께 처리합니다. Access JWT의 즉시 회수는 수행하지 않습니다.")
-    public ResponseEntity<Void> complete(@Valid @RequestBody PasswordResetCompleteRequest request, HttpServletResponse response) {
+    public ApiResponse<Void> complete(@Valid @RequestBody PasswordResetCompleteRequest request, HttpServletResponse response) {
         service.complete(request);
         cookie.clear(response);
-        return ResponseEntity.noContent().cacheControl(CacheControl.noStore()).build();
+        return ApiResponse.onSuccess(null, SuccessCode.OK);
     }
 }

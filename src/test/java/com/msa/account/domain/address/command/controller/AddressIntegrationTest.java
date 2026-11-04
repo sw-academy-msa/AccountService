@@ -62,17 +62,19 @@ class AddressIntegrationTest {
     // 기본 주소를 먼저 반환하고 선택 주소 수정 시 기본 여부는 유지합니다.
     void registersReadsAndUpdatesAddresses() throws Exception {
         mvc.perform(get(BASE).with(jwt().jwt(j -> j.subject(buyer.getId().toString()))))
-                .andExpect(status().isOk()).andExpect(content().json("[]"));
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data").isEmpty());
         String first = create(buyer.getId());
         String second = create(buyer.getId());
-        getOne(buyer.getId(), first).andExpect(jsonPath("$.defaultAddress").value(true))
-                .andExpect(jsonPath("$.recipientPhone").value("01012345678"));
-        getOne(buyer.getId(), second).andExpect(jsonPath("$.defaultAddress").value(false));
-        perform(buyer.getId(), "PUT", "/" + second, BODY.replace("집", "회사")).andExpect(status().isNoContent());
-        perform(buyer.getId(), "PUT", "/" + second + "/default", null).andExpect(status().isNoContent());
+        getOne(buyer.getId(), first).andExpect(jsonPath("$.data.defaultAddress").value(true))
+                .andExpect(jsonPath("$.data.recipientPhone").value("01012345678"));
+        getOne(buyer.getId(), second).andExpect(jsonPath("$.data.defaultAddress").value(false));
+        perform(buyer.getId(), "PUT", "/" + second, BODY.replace("집", "회사")).andExpect(status().isOk());
+        perform(buyer.getId(), "PUT", "/" + second + "/default", null).andExpect(status().isOk());
         mvc.perform(get(BASE).with(jwt().jwt(j -> j.subject(buyer.getId().toString()))))
-                .andExpect(status().isOk()).andExpect(jsonPath("$[0].addressId").value(second))
-                .andExpect(jsonPath("$[0].label").value("회사"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.data[0].addressId").value(second))
+                .andExpect(jsonPath("$.data[0].label").value("회사"))
                 .andExpect(header().string("Cache-Control", "no-store"));
         assertThat(defaultCount()).isEqualTo(1);
     }
@@ -87,7 +89,7 @@ class AddressIntegrationTest {
         perform(buyer.getId(), "DELETE", "/" + theirs, null).andExpect(status().isNotFound());
         perform(buyer.getId(), "PUT", "/" + theirs + "/default", null).andExpect(status().isNotFound());
         getOne(buyer.getId(), UUID.randomUUID().toString()).andExpect(status().isNotFound());
-        getOne(buyer.getId(), own).andExpect(jsonPath("$.defaultAddress").value(true));
+        getOne(buyer.getId(), own).andExpect(jsonPath("$.data.defaultAddress").value(true));
         assertThat(addresses.count()).isEqualTo(2);
     }
 
@@ -97,11 +99,11 @@ class AddressIntegrationTest {
         String first = create(buyer.getId()), second = create(buyer.getId());
         perform(buyer.getId(), "DELETE", "/" + first, null).andExpect(status().isConflict())
                 .andExpect(jsonPath("$.code").value("ADDRESS_DEFAULT_CHANGE_REQUIRED"));
-        perform(buyer.getId(), "PUT", "/" + second + "/default", null).andExpect(status().isNoContent());
-        perform(buyer.getId(), "DELETE", "/" + first, null).andExpect(status().isNoContent());
-        perform(buyer.getId(), "DELETE", "/" + second, null).andExpect(status().isNoContent());
+        perform(buyer.getId(), "PUT", "/" + second + "/default", null).andExpect(status().isOk());
+        perform(buyer.getId(), "DELETE", "/" + first, null).andExpect(status().isOk());
+        perform(buyer.getId(), "DELETE", "/" + second, null).andExpect(status().isOk());
         assertThat(addresses.countByAccountId(buyer.getId())).isZero();
-        getOne(buyer.getId(), create(buyer.getId())).andExpect(jsonPath("$.defaultAddress").value(true));
+        getOne(buyer.getId(), create(buyer.getId())).andExpect(jsonPath("$.data.defaultAddress").value(true));
     }
 
     @Test
@@ -150,7 +152,7 @@ class AddressIntegrationTest {
         create(buyer.getId());
         String body = BODY.stripTrailing().replace("}", ",\"accountId\":\"" + other.getId() + "\",\"defaultAddress\":true}");
         perform(buyer.getId(), "POST", "", body).andExpect(status().isCreated())
-                .andExpect(jsonPath("$.defaultAddress").value(false));
+                .andExpect(jsonPath("$.data.defaultAddress").value(false));
         assertThat(addresses.countByAccountId(buyer.getId())).isEqualTo(2);
         assertThat(addresses.countByAccountId(other.getId())).isZero();
     }
@@ -168,9 +170,9 @@ class AddressIntegrationTest {
     void concurrentDefaultChangesKeepSingleDefault() throws Exception {
         String first = create(buyer.getId()), second = create(buyer.getId());
         Callable<String> a = () -> { perform(buyer.getId(), "PUT", "/" + first + "/default", null)
-                .andExpect(status().isNoContent()); return first; };
+                .andExpect(status().isOk()); return first; };
         Callable<String> b = () -> { perform(buyer.getId(), "PUT", "/" + second + "/default", null)
-                .andExpect(status().isNoContent()); return second; };
+                .andExpect(status().isOk()); return second; };
         together(a, b);
         assertThat(defaultCount()).isEqualTo(1);
     }
@@ -183,7 +185,7 @@ class AddressIntegrationTest {
     private String create(UUID owner) throws Exception {
         var result = perform(owner, "POST", "", BODY).andExpect(status().isCreated())
                 .andExpect(header().exists("Location")).andReturn().getResponse();
-        return JsonPath.read(result.getContentAsString(), "$.addressId");
+        return JsonPath.read(result.getContentAsString(), "$.data.addressId");
     }
     private ResultActions getOne(UUID owner, String id) throws Exception {
         return mvc.perform(get(BASE + "/" + id).with(jwt().jwt(j -> j.subject(owner.toString()))));

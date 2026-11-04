@@ -1,5 +1,7 @@
 package com.msa.account.domain.verification.entity;
 
+import lombok.Builder;
+
 import jakarta.persistence.*;
 import java.time.Instant;
 import java.util.UUID;
@@ -13,7 +15,17 @@ public class PasswordResetVerification extends VerificationChallenge {
     @Column(name = "account_id")
     private UUID accountId;
     protected PasswordResetVerification() { }
+    // 기존 생성자의 기본 상태·정규화·검증을 거치는 인자만 빌더로 노출합니다.
+    @Builder
     public PasswordResetVerification(String email, Instant now) { super(email, now); }
     public void bindAccount(UUID accountId) { this.accountId = accountId; }
     public UUID getAccountId() { return accountId; }
+
+    /** 생성 중인 개인정보·토큰·계좌·해시는 문자열 출력에 포함하지 않습니다. */
+    public static class PasswordResetVerificationBuilder {
+        @Override
+        public String toString() {
+            return "PasswordResetVerificationBuilder[REDACTED]";
+        }
+    }
 }

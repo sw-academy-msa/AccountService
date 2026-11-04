@@ -35,7 +35,11 @@ public class SellerReviewCommandServiceImpl implements SellerReviewCommandServic
         if(!owner.hasRole(Role.SELLER)) owner.grantRole(Role.SELLER,adminId,clock.instant());
         application.approve(adminId,clock.instant());
         // 승인·권한 부여·현재 프로필 생성을 함께 커밋합니다. 재승인은 위에서 반환하므로 수정 내용을 덮어쓰지 않습니다.
-        profiles.save(new SellerProfile(owner,application,clock.instant()));
+        profiles.save(SellerProfile.builder()
+                .owner(owner)
+                .approved(application)
+                .now(clock.instant())
+                .build());
     }
     @Override public void reject(UUID adminId,UUID applicationId,String reason) {
         access.requireAdmin(adminId,false);

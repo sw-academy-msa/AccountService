@@ -27,6 +27,9 @@ dependencyManagement {
 // implementation은 실행용, testImplementation은 테스트용 의존성입니다.
 // MVC·입력 검증·JPA·보안·상태 확인·Swagger와 PostgreSQL 통합 테스트를 구성합니다.
 dependencies {
+    // 빌더 코드는 컴파일 시 생성하며 실행 이미지에는 Lombok이 필요하지 않습니다.
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
     // 스타터의 자동 설정으로 등록하므로 별도 EnableDiscoveryClient는 필요하지 않습니다.
     implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-client'
     // 로컬 S3 호환 저장소와 운영 AWS S3에 같은 클라이언트로 접근합니다.

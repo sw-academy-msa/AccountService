@@ -1,4 +1,7 @@
 package com.msa.account.domain.admin.command.controller;
+
+import com.msa.account.global.response.ApiResponse;
+import com.msa.account.global.response.SuccessCode;
 import com.msa.account.domain.seller.command.dto.request.RejectSellerApplicationRequest;
 import com.msa.account.domain.seller.command.service.SellerReviewCommandService;
 import com.msa.account.domain.seller.command.service.SellerCertificateReviewCommandService;
@@ -29,13 +32,13 @@ public class SellerReviewCommandController {
                 .header("X-Content-Type-Options","nosniff").body(file.bytes());
     }
     @PostMapping("/{applicationId}/approve") @Operation(summary="판매자 신청 승인",description="현재 운영자가 PDF를 먼저 조회해야 합니다. BUYER를 유지하고 SELLER를 추가합니다.")
-    public ResponseEntity<Void> approve(@AuthenticationPrincipal Jwt jwt,@PathVariable UUID applicationId) {
+    public ApiResponse<Void> approve(@AuthenticationPrincipal Jwt jwt,@PathVariable UUID applicationId) {
         service.approve(UUID.fromString(jwt.getSubject()),applicationId); return done();
     }
     @PostMapping("/{applicationId}/reject") @Operation(summary="판매자 신청 거절")
-    public ResponseEntity<Void> reject(@AuthenticationPrincipal Jwt jwt,@PathVariable UUID applicationId,
+    public ApiResponse<Void> reject(@AuthenticationPrincipal Jwt jwt,@PathVariable UUID applicationId,
             @Valid @RequestBody RejectSellerApplicationRequest request) {
         service.reject(UUID.fromString(jwt.getSubject()),applicationId,request.reason()); return done();
     }
-    private ResponseEntity<Void> done() { return ResponseEntity.noContent().cacheControl(CacheControl.noStore()).build(); }
+    private ApiResponse<Void> done() { return ApiResponse.onSuccess(null, SuccessCode.OK); }
 }

@@ -48,7 +48,10 @@ public class AuthCommandServiceImpl implements AuthCommandService {
     public AuthTokens login(LoginRequest request) {
         String email = request.email().trim().toLowerCase(Locale.ROOT);
         loginLock.acquire(email);
-        var attempt = attempts.findById(email).orElseGet(() -> new LoginAttempt(email, clock.instant()));
+        var attempt = attempts.findById(email).orElseGet(() -> LoginAttempt.builder()
+                .email(email)
+                .now(clock.instant())
+                .build());
         if (attempt.isBlocked(clock.instant(), properties.loginWindow(), properties.maxLoginFailures()))
             throw new AuthException(AuthErrorCode.LOGIN_RATE_LIMITED);
         Account account = accounts.findIdByEmail(email).flatMap(accounts::findLockedById).orElse(null);
@@ -60,7 +63,11 @@ public class AuthCommandServiceImpl implements AuthCommandService {
         requireActive(account);
         attempts.deleteById(email);
         var now = clock.instant();
-        AuthSession session = sessions.save(new AuthSession(account, now, now.plus(properties.refreshTtl())));
+        AuthSession session = sessions.save(AuthSession.builder()
+                .account(account)
+                .now(now)
+                .expiresAt(now.plus(properties.refreshTtl()))
+                .build());
         return issue(session);
     }
 
@@ -105,7 +112,11 @@ public class AuthCommandServiceImpl implements AuthCommandService {
         byte[] bytes = new byte[32];
         random.nextBytes(bytes);
         String raw = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
-        tokens.save(new RefreshToken(hash(raw), session, clock.instant()));
+        tokens.save(RefreshToken.builder()
+                .hash(hash(raw))
+                .session(session)
+                .now(clock.instant())
+                .build());
         return new AuthTokens(accessTokens.issue(session.getAccount()), raw, session.getExpiresAt());
     }
     private void requireActive(Account account) {

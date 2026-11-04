@@ -93,10 +93,10 @@ class SellerProfileIntegrationTest {
     // 승인 직후 현재 정보가 생성되고 예금주를 추측하지 않으며 승인 PDF를 조회할 수 있습니다.
     void readsApprovedProfileAndCertificate() throws Exception {
         view(seller).andExpect(status().isOk())
-                .andExpect(jsonPath("$.approvedApplicationId").value(approvedId))
-                .andExpect(jsonPath("$.bankAccount.maskedBankAccount").value("***5678"))
-                .andExpect(jsonPath("$.bankAccount.accountHolderName").isEmpty())
-                .andExpect(jsonPath("$.bankAccountEncrypted").doesNotExist())
+                .andExpect(jsonPath("$.data.approvedApplicationId").value(approvedId))
+                .andExpect(jsonPath("$.data.bankAccount.maskedBankAccount").value("***5678"))
+                .andExpect(jsonPath("$.data.bankAccount.accountHolderName").isEmpty())
+                .andExpect(jsonPath("$.data.bankAccountEncrypted").doesNotExist())
                 .andExpect(header().string("Cache-Control", "no-store"));
         assertThat(profiles.count()).isEqualTo(2);
         // 프로필의 approvedApplicationId로 기존 신청별 PDF API를 호출합니다.
@@ -107,41 +107,41 @@ class SellerProfileIntegrationTest {
     @Test
     // 담당자 변경은 판매자 현재 정보만 바꾸며 회원 정보·신청서·다른 판매자는 유지합니다.
     void updatesContactWithoutChangingAccountOrApplication() throws Exception {
-        update(seller, "/contact", CONTACT).andExpect(status().isNoContent());
-        view(seller).andExpect(jsonPath("$.sellerDisplayName").value("새상점"))
-                .andExpect(jsonPath("$.contactEmail").value("new@example.com"))
-                .andExpect(jsonPath("$.contactPhone").value("01099998888"));
+        update(seller, "/contact", CONTACT).andExpect(status().isOk());
+        view(seller).andExpect(jsonPath("$.data.sellerDisplayName").value("새상점"))
+                .andExpect(jsonPath("$.data.contactEmail").value("new@example.com"))
+                .andExpect(jsonPath("$.data.contactPhone").value("01099998888"));
         assertThat(accounts.findById(seller.getId()).orElseThrow().getName()).isEqualTo("회원이름");
         assertThat(accounts.findById(seller.getId()).orElseThrow().getEmail()).isEqualTo("seller@example.com");
         assertThat(applications.findById(UUID.fromString(approvedId)).orElseThrow().getContactName()).isEqualTo("원래담당자");
-        view(other).andExpect(jsonPath("$.sellerDisplayName").value("원래상점"));
+        view(other).andExpect(jsonPath("$.data.sellerDisplayName").value("원래상점"));
     }
 
     @Test
     // 계좌는 기존 암호화 규칙을 재사용하고 원본 신청의 계좌·심사 상태는 변경하지 않습니다.
     void updatesAndEncryptsBankAccount() throws Exception {
-        update(seller, "/bank-account", BANK).andExpect(status().isNoContent());
-        view(seller).andExpect(jsonPath("$.bankAccount.bankName").value("새은행"))
-                .andExpect(jsonPath("$.bankAccount.maskedBankAccount").value("***9999"))
-                .andExpect(jsonPath("$.bankAccount.accountHolderName").value("예금주"));
+        update(seller, "/bank-account", BANK).andExpect(status().isOk());
+        view(seller).andExpect(jsonPath("$.data.bankAccount.bankName").value("새은행"))
+                .andExpect(jsonPath("$.data.bankAccount.maskedBankAccount").value("***9999"))
+                .andExpect(jsonPath("$.data.bankAccount.accountHolderName").value("예금주"));
         String cipher = jdbc.queryForObject("select bank_account_encrypted from account.seller_profiles where account_id=?",
                 String.class, seller.getId());
         assertThat(cipher).startsWith("v1:").doesNotContain("11122229999");
         var original = applications.findById(UUID.fromString(approvedId)).orElseThrow();
         assertThat(original.getMaskedBankAccount()).isEqualTo("***5678");
         assertThat(original.getStatus().name()).isEqualTo("APPROVED");
-        view(other).andExpect(jsonPath("$.bankAccount.maskedBankAccount").value("***5678"));
+        view(other).andExpect(jsonPath("$.data.bankAccount.maskedBankAccount").value("***5678"));
     }
 
     @Test
     // 출고·반품 주소는 현재 프로필만 교체하고 승인 당시 주소는 그대로 남깁니다.
     void updatesAddressesWithoutRewritingApproval() throws Exception {
-        update(seller, "/addresses", ADDRESSES).andExpect(status().isNoContent());
-        view(seller).andExpect(jsonPath("$.dispatchAddress.postalCode").value("04066"))
-                .andExpect(jsonPath("$.returnAddress.postalCode").value("13494"));
+        update(seller, "/addresses", ADDRESSES).andExpect(status().isOk());
+        view(seller).andExpect(jsonPath("$.data.dispatchAddress.postalCode").value("04066"))
+                .andExpect(jsonPath("$.data.returnAddress.postalCode").value("13494"));
         assertThat(applications.findById(UUID.fromString(approvedId)).orElseThrow().getDispatchAddress().getPostalCode())
                 .isEqualTo("06236");
-        view(other).andExpect(jsonPath("$.dispatchAddress.postalCode").value("06236"));
+        view(other).andExpect(jsonPath("$.data.dispatchAddress.postalCode").value("06236"));
     }
 
     @Test
@@ -175,28 +175,28 @@ class SellerProfileIntegrationTest {
         update(seller, "/bank-account", BANK.replace("예금주", " ")).andExpect(status().isBadRequest());
         update(seller, "/addresses", "{}").andExpect(status().isBadRequest());
         update(seller, "/addresses", ADDRESSES.replace("04066", "1234")).andExpect(status().isBadRequest());
-        view(seller).andExpect(jsonPath("$.sellerDisplayName").value("원래상점"))
-                .andExpect(jsonPath("$.bankAccount.maskedBankAccount").value("***5678"));
+        view(seller).andExpect(jsonPath("$.data.sellerDisplayName").value("원래상점"))
+                .andExpect(jsonPath("$.data.bankAccount.maskedBankAccount").value("***5678"));
     }
 
     @Test
     // 요청에 타인 ID를 끼워 넣어도 JWT의 본인 계정만 변경합니다.
     void ignoresClientSuppliedOwner() throws Exception {
         String input = CONTACT.trim().replace("}", ",\"accountId\":\"" + other.getId() + "\"}");
-        update(seller, "/contact", input).andExpect(status().isNoContent());
-        view(seller).andExpect(jsonPath("$.sellerDisplayName").value("새상점"));
-        view(other).andExpect(jsonPath("$.sellerDisplayName").value("원래상점"));
+        update(seller, "/contact", input).andExpect(status().isOk());
+        view(seller).andExpect(jsonPath("$.data.sellerDisplayName").value("새상점"));
+        view(other).andExpect(jsonPath("$.data.sellerDisplayName").value("원래상점"));
     }
 
     @Test
     // 기존 승인 계정은 조회가 DB 행을 생성하지 않고 최초 수정에서만 현재 프로필을 만듭니다.
     void supportsLegacyApprovedAccountsWithoutWritingOnRead() throws Exception {
         profiles.deleteById(seller.getId());
-        view(seller).andExpect(status().isOk()).andExpect(jsonPath("$.sellerDisplayName").value("원래상점"));
+        view(seller).andExpect(status().isOk()).andExpect(jsonPath("$.data.sellerDisplayName").value("원래상점"));
         assertThat(profiles.existsById(seller.getId())).isFalse();
-        update(seller, "/contact", CONTACT).andExpect(status().isNoContent());
+        update(seller, "/contact", CONTACT).andExpect(status().isOk());
         assertThat(profiles.existsById(seller.getId())).isTrue();
-        view(seller).andExpect(jsonPath("$.sellerDisplayName").value("새상점"));
+        view(seller).andExpect(jsonPath("$.data.sellerDisplayName").value("새상점"));
     }
 
     @Test
@@ -212,20 +212,20 @@ class SellerProfileIntegrationTest {
                 gate.await(); return update(seller, "/bank-account", BANK).andReturn().getResponse().getStatus();
             });
             gate.countDown();
-            assertThat(List.of(contact.get(20, TimeUnit.SECONDS), bank.get(20, TimeUnit.SECONDS))).containsExactly(204, 204);
+            assertThat(List.of(contact.get(20, TimeUnit.SECONDS), bank.get(20, TimeUnit.SECONDS))).containsExactly(200, 200);
         }
         assertThat(profiles.count()).isEqualTo(2);
-        view(seller).andExpect(jsonPath("$.sellerDisplayName").value("새상점"))
-                .andExpect(jsonPath("$.bankAccount.maskedBankAccount").value("***9999"));
+        view(seller).andExpect(jsonPath("$.data.sellerDisplayName").value("새상점"))
+                .andExpect(jsonPath("$.data.bankAccount.maskedBankAccount").value("***9999"));
     }
 
     @Test
     // 중복 승인 요청은 변경된 프로필을 다시 신청 값으로 덮어쓰지 않습니다.
     void repeatedApprovalKeepsEditedProfile() throws Exception {
-        update(seller, "/contact", CONTACT).andExpect(status().isNoContent());
+        update(seller, "/contact", CONTACT).andExpect(status().isOk());
         mvc.perform(post("/api/v1/admin/seller-applications/" + approvedId + "/approve").with(as(admin, "ADMIN")))
-                .andExpect(status().isNoContent());
-        view(seller).andExpect(jsonPath("$.sellerDisplayName").value("새상점"));
+                .andExpect(status().isOk());
+        view(seller).andExpect(jsonPath("$.data.sellerDisplayName").value("새상점"));
         assertThat(profiles.count()).isEqualTo(2);
     }
 
@@ -237,7 +237,7 @@ class SellerProfileIntegrationTest {
         try {
             update(seller, "/bank-account", BANK).andExpect(status().isConflict());
             assertThat(profiles.existsById(seller.getId())).isFalse();
-            view(seller).andExpect(jsonPath("$.bankAccount.maskedBankAccount").value("***5678"));
+            view(seller).andExpect(jsonPath("$.data.bankAccount.maskedBankAccount").value("***5678"));
         } finally { jdbc.execute("alter table account.seller_profiles drop constraint test_bank_update"); }
     }
 
@@ -253,11 +253,11 @@ class SellerProfileIntegrationTest {
         var pdf = new MockMultipartFile("certificate", "business.pdf", "application/pdf", PDF);
         var response = mvc.perform(multipart("/api/v1/seller-applications").file(application).file(pdf).with(as(owner, "BUYER")))
                 .andExpect(status().isCreated()).andReturn().getResponse();
-        String id = JsonPath.read(response.getContentAsString(), "$.applicationId");
+        String id = JsonPath.read(response.getContentAsString(), "$.data.applicationId");
         mvc.perform(post("/api/v1/admin/seller-applications/" + id + "/certificate-review").with(as(admin, "ADMIN")))
                 .andExpect(status().isOk());
         mvc.perform(post("/api/v1/admin/seller-applications/" + id + "/approve").with(as(admin, "ADMIN")))
-                .andExpect(status().isNoContent());
+                .andExpect(status().isOk());
         return id;
     }
     private RequestPostProcessor as(Account a, String role) {

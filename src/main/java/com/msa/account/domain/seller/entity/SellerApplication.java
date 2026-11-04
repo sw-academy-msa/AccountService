@@ -1,4 +1,6 @@
 package com.msa.account.domain.seller.entity;
+
+import lombok.Builder;
 import com.msa.account.domain.account.entity.Account;
 import com.msa.account.domain.seller.command.dto.request.SellerApplicationRequest;
 import com.msa.account.domain.seller.enums.SellerApplicationStatus;
@@ -44,6 +46,8 @@ public class SellerApplication {
     @Column(name="rejection_reason",length=1000) private String rejectionReason;
     @Version private long version;
     protected SellerApplication() { }
+    // 기존 생성자의 기본 상태·정규화·검증을 거치는 인자만 빌더로 노출합니다.
+    @Builder
     public SellerApplication(Account owner,int attempt,SellerApplicationRequest request,String encrypted,Instant now) {
         account=owner; attemptNumber=attempt; sellerDisplayName=request.sellerDisplayName();
         contactName=request.contactName(); contactEmail=request.contactEmail();
@@ -84,4 +88,12 @@ public class SellerApplication {
     public Instant getReviewedAt() { return reviewedAt; }
     public UUID getReviewedBy() { return reviewedBy; }
     public String getRejectionReason() { return rejectionReason; }
+
+    /** 생성 중인 개인정보·토큰·계좌·해시는 문자열 출력에 포함하지 않습니다. */
+    public static class SellerApplicationBuilder {
+        @Override
+        public String toString() {
+            return "SellerApplicationBuilder[REDACTED]";
+        }
+    }
 }

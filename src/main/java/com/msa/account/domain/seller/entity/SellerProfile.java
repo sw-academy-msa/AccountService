@@ -1,5 +1,7 @@
 package com.msa.account.domain.seller.entity;
 
+import lombok.Builder;
+
 import com.msa.account.domain.account.entity.Account;
 import com.msa.account.domain.seller.command.dto.request.*;
 import com.msa.account.domain.seller.enums.SellerApplicationStatus;
@@ -59,6 +61,8 @@ public class SellerProfile {
     protected SellerProfile() { }
 
     // 계정 행 잠금을 획득한 승인·최초 수정 트랜잭션에서만 생성합니다.
+    // 기존 생성자의 기본 상태·정규화·검증을 거치는 인자만 빌더로 노출합니다.
+    @Builder
     public SellerProfile(Account owner, SellerApplication approved, Instant now) {
         if (approved.getStatus() != SellerApplicationStatus.APPROVED || !owner.getId().equals(approved.getAccountId()))
             throw new IllegalArgumentException("본인의 승인된 신청서가 필요합니다.");
@@ -104,4 +108,12 @@ public class SellerProfile {
     public SellerLocation getDispatchAddress() { return dispatchAddress; }
     public SellerLocation getReturnAddress() { return returnAddress; }
     public Instant getUpdatedAt() { return updatedAt; }
+
+    /** 생성 중인 개인정보·토큰·계좌·해시는 문자열 출력에 포함하지 않습니다. */
+    public static class SellerProfileBuilder {
+        @Override
+        public String toString() {
+            return "SellerProfileBuilder[REDACTED]";
+        }
+    }
 }

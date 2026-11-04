@@ -47,11 +47,12 @@ public class AccountCommandServiceImpl implements AccountCommandService {
         Instant verifiedAt = emailVerificationService.consume(normalizedEmail, request.verificationToken());
         validateEmailAvailability(normalizedEmail);
 
-        Account account = Account.registerBuyer(
-                normalizedEmail,
-                passwordEncoder.encode(request.password()),
-                request.name()
-        );
+        // 빌더는 가입용 생성자를 거치므로 상태와 BUYER 권한을 외부에서 지정할 수 없습니다.
+        Account account = Account.builder()
+                .email(normalizedEmail)
+                .passwordHash(passwordEncoder.encode(request.password()))
+                .name(request.name())
+                .build();
         account.initializeSignup(verifiedAt, request.interestCategories(),
                 request.notificationSettings().saleStart(),
                 request.notificationSettings().personalizedRecommendation(),

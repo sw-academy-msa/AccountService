@@ -48,7 +48,11 @@ public class SellerProfileCommandServiceImpl implements SellerProfileCommandServ
         return profiles.findById(id).orElseGet(() -> {
             var approved = applications.findFirstByAccount_IdAndStatusOrderByAttemptNumberDesc(id, SellerApplicationStatus.APPROVED)
                     .orElseThrow(() -> new SellerException(SellerErrorCode.SELLER_REQUIRED));
-            return profiles.save(new SellerProfile(owner, approved, clock.instant()));
+            return profiles.save(SellerProfile.builder()
+                .owner(owner)
+                .approved(approved)
+                .now(clock.instant())
+                .build());
         });
     }
 }
