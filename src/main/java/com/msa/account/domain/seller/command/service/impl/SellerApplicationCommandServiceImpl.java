@@ -37,8 +37,13 @@ public class SellerApplicationCommandServiceImpl implements SellerApplicationCom
         if(owner.hasRole(Role.SELLER) || previous.filter(a->a.getStatus()!=SellerApplicationStatus.REJECTED).isPresent())
             throw new SellerException(SellerErrorCode.ALREADY_APPLIED);
         var content=validation.validate(files);
-        var application=applications.save(new SellerApplication(owner,previous.map(a->a.getAttemptNumber()+1).orElse(1),
-                request,encryption.encrypt(request.bankAccountNumber()),clock.instant()));
+        var application=applications.save(SellerApplication.builder()
+                .owner(owner)
+                .attempt(previous.map(a->a.getAttemptNumber()+1).orElse(1))
+                .request(request)
+                .encrypted(encryption.encrypt(request.bankAccountNumber()))
+                .now(clock.instant())
+                .build());
         String key="seller-certificates/"+application.getId()+"/"+UUID.randomUUID()+".pdf";
         // 업로드가 타임아웃으로 불확실해져도 알려진 키를 사용해 롤백 후 삭제를 시도합니다.
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
@@ -50,7 +55,11 @@ public class SellerApplicationCommandServiceImpl implements SellerApplicationCom
             }
         });
         storage.put(key,content);
-        certificates.save(new SellerCertificate(application.getId(),key,content.bytes().length));
+        certificates.save(SellerCertificate.builder()
+                .applicationId(application.getId())
+                .key(key)
+                .length(content.bytes().length)
+                .build());
         return new SellerApplicationCreatedResponse(application.getId(),application.getStatus());
     }
 }

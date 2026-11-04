@@ -1,5 +1,7 @@
 package com.msa.account.domain.auth.entity;
 
+import lombok.Builder;
+
 import jakarta.persistence.*;
 import java.time.Instant;
 
@@ -14,10 +16,20 @@ public class RefreshToken {
     @Column(name = "issued_at", nullable = false) private Instant issuedAt;
     @Column(name = "consumed_at") private Instant consumedAt;
     protected RefreshToken() { }
+    // 기존 생성자의 기본 상태·정규화·검증을 거치는 인자만 빌더로 노출합니다.
+    @Builder
     public RefreshToken(String hash, AuthSession session, Instant now) {
         this.hash = hash; this.session = session; this.issuedAt = now;
     }
     // 세션 DB 잠금 안에서만 소비하여 동시에 두 번 재발급하지 못하게 합니다.
     public boolean isConsumed() { return consumedAt != null; }
     public void consume(Instant now) { this.consumedAt = now; }
+
+    /** 생성 중인 개인정보·토큰·계좌·해시는 문자열 출력에 포함하지 않습니다. */
+    public static class RefreshTokenBuilder {
+        @Override
+        public String toString() {
+            return "RefreshTokenBuilder[REDACTED]";
+        }
+    }
 }

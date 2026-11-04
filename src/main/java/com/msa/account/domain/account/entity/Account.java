@@ -1,5 +1,7 @@
 package com.msa.account.domain.account.entity;
 
+import lombok.Builder;
+
 import com.msa.account.domain.account.enums.AccountStatus;
 import com.msa.account.domain.account.enums.Role;
 import com.msa.account.domain.account.exception.AccountErrorCode;
@@ -96,10 +98,25 @@ public class Account {
             throw new IllegalStateException("가입 초기 설정은 한 번만 적용할 수 있습니다.");
         }
         this.emailVerifiedAt = java.util.Objects.requireNonNull(verifiedAt);
-        categories.forEach(category -> interests.add(new AccountInterest(this, category)));
-        this.notificationSettings = new AccountNotificationSettings(this, saleStart, personalizedRecommendation);
-        this.consent = new AccountConsent(this, marketingAgreed, now);
-        this.consentHistories.add(new AccountConsentHistory(this, marketingAgreed, now));
+        categories.forEach(category -> interests.add(AccountInterest.builder()
+                .account(this)
+                .category(category)
+                .build()));
+        this.notificationSettings = AccountNotificationSettings.builder()
+                .account(this)
+                .saleStart(saleStart)
+                .personalizedRecommendation(personalizedRecommendation)
+                .build();
+        this.consent = AccountConsent.builder()
+                .account(this)
+                .marketingAgreed(marketingAgreed)
+                .now(now)
+                .build();
+        this.consentHistories.add(AccountConsentHistory.builder()
+                .account(this)
+                .marketingAgreed(marketingAgreed)
+                .now(now)
+                .build());
     }
 
     public Instant getEmailVerifiedAt() { return emailVerifiedAt; }
@@ -115,14 +132,21 @@ public class Account {
         interests.removeIf(interest -> !categories.contains(interest.getCategory()));
         Set<InterestCategory> existing = getInterestCategories();
         categories.stream().filter(category -> !existing.contains(category))
-                .forEach(category -> interests.add(new AccountInterest(this, category)));
+                .forEach(category -> interests.add(AccountInterest.builder()
+                .account(this)
+                .category(category)
+                .build()));
         this.updatedAt = now;
     }
 
     // 이전 개발 계정에 설정 행이 없으면 기본 상태에서 생성합니다.
     public void changeNotifications(boolean saleStart, boolean recommendation, Instant now) {
         if (notificationSettings == null) {
-            notificationSettings = new AccountNotificationSettings(this, saleStart, recommendation);
+            notificationSettings = AccountNotificationSettings.builder()
+                .account(this)
+                .saleStart(saleStart)
+                .personalizedRecommendation(recommendation)
+                .build();
         } else {
             notificationSettings.change(saleStart, recommendation);
         }
@@ -132,12 +156,21 @@ public class Account {
     // 같은 상태의 재요청은 이력과 시각을 바꾸지 않습니다. 최초 미동의는 철회로 기록하지 않습니다.
     public void changeMarketingConsent(boolean agreed, Instant now) {
         if (consent == null) {
-            consent = new AccountConsent(this, agreed, now);
+            consent = AccountConsent.builder()
+                .account(this)
+                .marketingAgreed(agreed)
+                .now(now)
+                .build();
         } else {
             if (consent.isMarketingAgreed() == agreed) return;
             consent.change(agreed, now);
         }
-        consentHistories.add(new AccountConsentHistory(this, agreed, now, "ACCOUNT_SETTINGS"));
+        consentHistories.add(AccountConsentHistory.builder()
+                .account(this)
+                .marketingAgreed(agreed)
+                .now(now)
+                .source("ACCOUNT_SETTINGS")
+                .build());
         this.updatedAt = now;
     }
 
@@ -157,6 +190,8 @@ public class Account {
     protected Account() {
     }
 
+    // 기존 생성자의 기본 상태·정규화·검증을 거치는 인자만 빌더로 노출합니다.
+    @Builder
     private Account(String email, String passwordHash, String name) {
         this.email = normalizeEmail(email);
         this.passwordHash = passwordHash;
@@ -167,7 +202,11 @@ public class Account {
 
     // 일반 가입 경로에서는 구매자 권한으로만 회원을 생성합니다.
     public static Account registerBuyer(String email, String passwordHash, String name) {
-        return new Account(email, passwordHash, name);
+        return Account.builder()
+                .email(email)
+                .passwordHash(passwordHash)
+                .name(name)
+                .build();
     }
 
     // 이미 보유한 권한은 거절하고, 권한을 부여한 주체와 시각을 함께 기록합니다.
@@ -245,5 +284,13 @@ public class Account {
 
     public Instant getUpdatedAt() {
         return updatedAt;
+    }
+
+    /** 생성 중인 개인정보·토큰·계좌·해시는 문자열 출력에 포함하지 않습니다. */
+    public static class AccountBuilder {
+        @Override
+        public String toString() {
+            return "AccountBuilder[REDACTED]";
+        }
     }
 }

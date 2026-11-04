@@ -1,5 +1,7 @@
 package com.msa.account.domain.account.entity;
 
+import lombok.Builder;
+
 import jakarta.persistence.*;
 import java.util.UUID;
 
@@ -21,6 +23,8 @@ public class AccountNotificationSettings {
     protected AccountNotificationSettings() { }
 
     // 별도 테이블에 저장하고 생략한 설정은 DTO에서 false로 정규화합니다.
+    // 기존 생성자의 기본 상태·정규화·검증을 거치는 인자만 빌더로 노출합니다.
+    @Builder(access = lombok.AccessLevel.PACKAGE)
     AccountNotificationSettings(Account account, boolean saleStart, boolean personalizedRecommendation) {
         this.account = account;
         this.saleStart = saleStart;
@@ -33,4 +37,12 @@ public class AccountNotificationSettings {
     }
     public boolean isSaleStart() { return saleStart; }
     public boolean isPersonalizedRecommendation() { return personalizedRecommendation; }
+
+    /** 생성 중인 개인정보·토큰·계좌·해시는 문자열 출력에 포함하지 않습니다. */
+    static class AccountNotificationSettingsBuilder {
+        @Override
+        public String toString() {
+            return "AccountNotificationSettingsBuilder[REDACTED]";
+        }
+    }
 }

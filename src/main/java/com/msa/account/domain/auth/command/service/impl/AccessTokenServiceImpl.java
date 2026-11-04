@@ -45,8 +45,13 @@ public class AccessTokenServiceImpl implements AccessTokenService {
                         roles,
                         Map.of("principal_type", "user"),
                         properties.accessTtl());
-        return new TokenResponse(
-                signed.value(), "Bearer", signed.expiresAt(), account.getId(), roles);
+        return TokenResponse.builder()
+                .accessToken(signed.value())
+                .tokenType("Bearer")
+                .expiresAt(signed.expiresAt())
+                .accountId(account.getId())
+                .roles(roles)
+                .build();
     }
 
     @Override
@@ -59,8 +64,13 @@ public class AccessTokenServiceImpl implements AccessTokenService {
                         Set.of(),
                         Map.of("principal_type", "service", "client_id", clientId, "scope", scope),
                         ttl);
-        return new ServiceTokenResponse(
-                signed.value(), "Bearer", ttl.toSeconds(), signed.expiresAt(), scope);
+        return ServiceTokenResponse.builder()
+                .accessToken(signed.value())
+                .tokenType("Bearer")
+                .expiresIn(ttl.toSeconds())
+                .expiresAt(signed.expiresAt())
+                .scope(scope)
+                .build();
     }
 
     /** 키·kid·RS256·issuer/audience·시간·jti 구성은 사용자와 서비스가 공유합니다. */
