@@ -54,3 +54,4 @@ logs/
 
 /AGENTS.md
 /README.md
+/scripts/Initialize-LocalWithdrawalConnection.ps1
