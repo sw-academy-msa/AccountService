@@ -1,12 +1,19 @@
 package com.msa.account.domain.account.exception;
 
 import com.msa.account.global.error.ErrorCode;
+
 import org.springframework.http.HttpStatus;
 
-/**
- * 회원 도메인에서 예상할 수 있는 오류의 HTTP 상태, 식별 코드, 사용자 메시지를 정의합니다.
- */
+/** 회원 도메인에서 예상할 수 있는 오류의 HTTP 상태, 식별 코드, 사용자 메시지를 정의합니다. */
 public enum AccountErrorCode implements ErrorCode {
+    WITHDRAWAL_CHECK_UNAVAILABLE(
+            HttpStatus.SERVICE_UNAVAILABLE,
+            "ACCOUNT_WITHDRAWAL_CHECK_UNAVAILABLE",
+            "진행 중인 거래 상태를 확인할 수 없습니다. 잠시 후 다시 시도해 주세요."),
+    WITHDRAWAL_BLOCKED(
+            HttpStatus.CONFLICT,
+            "ACCOUNT_WITHDRAWAL_BLOCKED",
+            "진행 중인 주문과 판매 또는 정산이 있어 탈퇴할 수 없습니다."),
     EMAIL_ALREADY_EXISTS(HttpStatus.CONFLICT, "ACCOUNT_EMAIL_ALREADY_EXISTS", "이미 가입된 이메일입니다."),
     ACCOUNT_NOT_FOUND(HttpStatus.NOT_FOUND, "ACCOUNT_NOT_FOUND", "계정을 찾을 수 없습니다."),
     ROLE_ALREADY_GRANTED(HttpStatus.CONFLICT, "ACCOUNT_ROLE_ALREADY_GRANTED", "이미 부여된 권한입니다.");
