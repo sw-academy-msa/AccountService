@@ -3,6 +3,19 @@ spring:
   config:
     # 확장자가 없는 루트 .env를 properties 형식으로 읽습니다. 파일이 없어도 실행할 수 있습니다.
     import: optional:file:./.env[.properties]
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:19092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.ByteArraySerializer
+      acks: all
+      properties:
+        enable.idempotence: true
+        max.block.ms: 2000
+        delivery.timeout.ms: 8000
+        request.timeout.ms: 3000
+    admin:
+      auto-create: false
   application:
     name: account-service
   profiles:
@@ -34,6 +47,10 @@ spring:
 
 # 초기 개발 정책입니다. 운영에서 요구하는 값은 환경별로 조정할 수 있습니다.
 account:
+  outbox:
+    publisher-enabled: ${ACCOUNT_OUTBOX_PUBLISHER_ENABLED:false}
+  withdrawal:
+    enabled: ${ACCOUNT_WITHDRAWAL_ENABLED:false}
   service-auth:
     # 원문 비밀값은 Order만 보유하고 Account에는 기존 BCrypt 인코더의 해시만 공급합니다.
     enabled: ${ACCOUNT_SERVICE_AUTH_ENABLED:false}
@@ -87,12 +104,25 @@ server:
   shutdown: graceful
 
 management:
+  metrics:
+    tags:
+      application: ${spring.application.name}
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
   endpoints:
     web:
       exposure:
-        include: health,info
+        include: health,info,prometheus
   endpoint:
     health:
       probes:
         enabled: true
       show-details: never
+
+# 업무 JWT와 분리된 읽기 전용 수집 토큰입니다. 빈 값이면 메트릭 접근을 거부합니다.
+monitoring:
+  scrape-token: ${MONITORING_SCRAPE_TOKEN:}
+
+  # Outbox 집계 스케줄은 명시 활성화하며 테스트/미설정 환경에서 DB를 주기 조회하지 않습니다.
+  outbox-enabled: ${MONITORING_OUTBOX_ENABLED:false}
