@@ -21,7 +21,10 @@ import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.cloud.client.DefaultServiceInstance;
+import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.loadbalancer.LoadBalancerClient;
+import org.springframework.cloud.client.loadbalancer.LoadBalancerRequest;
+import org.springframework.cloud.client.loadbalancer.LoadBalancerUriTools;
 import org.springframework.context.annotation.Import;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -148,7 +151,7 @@ class WithdrawalFlowIntegrationTest {
     Account account;
 
     @BeforeEach
-    void setup() {
+    void setup() throws Exception {
         now = Instant.parse("2030-01-01T00:00:00Z");
         when(clock.instant()).thenAnswer(i -> now);
         KEY.set(signingKey);
@@ -170,6 +173,22 @@ class WithdrawalFlowIntegrationTest {
                                     SERVERS.get(name).getAddress().getPort(),
                                     false);
                         });
+        // 탈퇴 확인은 @LoadBalanced RestClient(재시도 인터셉터 포함)로 나가므로 대역의 선택·실행·주소 변환도 실제처럼 연결합니다.
+        when(balancer.choose(anyString(), any()))
+                .thenAnswer(i -> balancer.choose((String) i.getArgument(0)));
+        when(balancer.execute(anyString(), any(ServiceInstance.class), any()))
+                .thenAnswer(
+                        i -> ((LoadBalancerRequest<?>) i.getArgument(2)).apply(i.getArgument(1)));
+        when(balancer.execute(anyString(), any(LoadBalancerRequest.class)))
+                .thenAnswer(
+                        i ->
+                                ((LoadBalancerRequest<?>) i.getArgument(1))
+                                        .apply(balancer.choose((String) i.getArgument(0))));
+        when(balancer.reconstructURI(any(), any()))
+                .thenAnswer(
+                        i ->
+                                LoadBalancerUriTools.reconstructURI(
+                                        i.getArgument(0), i.getArgument(1)));
         account =
                 Account.registerBuyer(
                         UUID.randomUUID() + "@example.com",

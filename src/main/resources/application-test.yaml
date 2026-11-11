@@ -20,6 +20,10 @@ account:
 spring:
   config:
     import: optional:classpath:/test-overrides.properties
+  # HTTP fixture에는 /actuator/health가 없으므로 상태 확인 대신 기본 인스턴스 목록을 씁니다.
+  cloud:
+    loadbalancer:
+      configurations: default
   # 통합 테스트에서는 발송 인터페이스를 대체하므로 실제 SMTP에 연결하지 않습니다.
   mail:
     host: localhost
