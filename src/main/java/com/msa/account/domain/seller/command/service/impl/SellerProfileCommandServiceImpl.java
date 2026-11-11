@@ -7,8 +7,10 @@ import com.msa.account.domain.seller.enums.SellerApplicationStatus;
 import com.msa.account.domain.seller.exception.*;
 import com.msa.account.domain.seller.repository.*;
 import com.msa.account.domain.seller.service.SellerAccessService;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 import java.time.Clock;
 import java.util.UUID;
 
@@ -21,38 +23,63 @@ public class SellerProfileCommandServiceImpl implements SellerProfileCommandServ
     private final SellerApplicationRepository applications;
     private final SellerBankEncryptionService encryption;
     private final Clock clock;
+    private final SellerAddressBookService addressBook;
 
-    public SellerProfileCommandServiceImpl(SellerAccessService access, SellerProfileRepository profiles,
-            SellerApplicationRepository applications, SellerBankEncryptionService encryption, Clock clock) {
-        this.access = access; this.profiles = profiles; this.applications = applications;
-        this.encryption = encryption; this.clock = clock;
+    public SellerProfileCommandServiceImpl(
+            SellerAccessService access,
+            SellerProfileRepository profiles,
+            SellerApplicationRepository applications,
+            SellerBankEncryptionService encryption,
+            Clock clock,
+            SellerAddressBookService addressBook) {
+        this.access = access;
+        this.profiles = profiles;
+        this.applications = applications;
+        this.encryption = encryption;
+        this.clock = clock;
+        this.addressBook = addressBook;
     }
 
     @Override
     public void updateContact(UUID id, UpdateSellerContactRequest request) {
         editable(id).updateContact(request, clock.instant());
     }
+
     @Override
     public void updateBankAccount(UUID id, UpdateSellerBankAccountRequest request) {
         var profile = editable(id);
-        profile.updateBank(request, encryption.encrypt(request.bankAccountNumber()), clock.instant());
+        profile.updateBank(
+                request, encryption.encrypt(request.bankAccountNumber()), clock.instant());
     }
+
     @Override
     public void updateAddresses(UUID id, UpdateSellerAddressesRequest request) {
         editable(id).updateAddresses(request, clock.instant());
+        // 기존 Product 배송 스냅샷 API와 새 주소록의 기본 주소가 달라지지 않게 동기화합니다.
+        addressBook.synchronizeLegacy(id);
     }
 
     // 이미 승인된 기존 계정도 첫 변경 시에만 프로필을 생성하며 조회에는 쓰기 부작용이 없습니다.
     private SellerProfile editable(UUID id) {
         var owner = access.requireSeller(id, true);
-        return profiles.findById(id).orElseGet(() -> {
-            var approved = applications.findFirstByAccount_IdAndStatusOrderByAttemptNumberDesc(id, SellerApplicationStatus.APPROVED)
-                    .orElseThrow(() -> new SellerException(SellerErrorCode.SELLER_REQUIRED));
-            return profiles.save(SellerProfile.builder()
-                .owner(owner)
-                .approved(approved)
-                .now(clock.instant())
-                .build());
-        });
+        return profiles.findById(id)
+                .orElseGet(
+                        () -> {
+                            var approved =
+                                    applications
+                                            .findFirstByAccount_IdAndStatusOrderByAttemptNumberDesc(
+                                                    id, SellerApplicationStatus.APPROVED)
+                                            .orElseThrow(
+                                                    () ->
+                                                            new SellerException(
+                                                                    SellerErrorCode
+                                                                            .SELLER_REQUIRED));
+                            return profiles.save(
+                                    SellerProfile.builder()
+                                            .owner(owner)
+                                            .approved(approved)
+                                            .now(clock.instant())
+                                            .build());
+                        });
     }
 }

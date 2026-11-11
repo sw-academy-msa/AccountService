@@ -38,8 +38,13 @@ public record ServiceAuthProperties(
                                 || c.secretHash() == null
                                 || !c.secretHash()
                                         .matches("\\$2[aby]\\$(1[0-6])\\$[./A-Za-z0-9]{53}")
+                                // Notification은 별도 주체로 분석 참여 유효성만 읽고 Order의 재고 scope는 유지합니다.
                                 || c.scopes().isEmpty()
-                                || !Set.of("product.stock").containsAll(c.scopes())) {
+                                || !Set.of(
+                                                "product.stock",
+                                                "ai.personalization.read",
+                                                "account.notifications.read")
+                                        .containsAll(c.scopes())) {
                             throw new IllegalArgumentException(
                                     "서비스 주체·비밀값 해시·허용 scope 설정이 올바르지 않습니다.");
                         }

@@ -50,7 +50,8 @@ logs/
 ### Local project documentation ###
 # 프로젝트 문서는 로컬에서만 관리합니다.
 /docs/
-/contracts/service-tokens.md
+/contracts/
 
 /AGENTS.md
 /README.md
+/scripts/Initialize-LocalWithdrawalConnection.ps1
