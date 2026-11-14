@@ -9,7 +9,11 @@ import java.util.UUID;
 
 /** 외부 차단 준비와 해제 재시도를 영속화합니다. COMMITTED는 계정 탈퇴와 같은 로컬 트랜잭션입니다. */
 @Entity
-@Table(name = "withdrawal_operations", schema = "account")
+@Table(
+        name = "withdrawal_operations",
+        schema = "account",
+        // 5초 주기 복구 작업이 진행 중 상태만 찾습니다. 종료된 탈퇴 작업이 쌓여도 전체를 읽지 않습니다.
+        indexes = @Index(name = "ix_withdrawal_operations_due", columnList = "state,next_at"))
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class WithdrawalOperation {

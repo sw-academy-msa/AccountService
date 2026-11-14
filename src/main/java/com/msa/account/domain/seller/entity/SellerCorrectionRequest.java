@@ -16,7 +16,13 @@ import java.util.*;
 @Table(
         schema = "account",
         name = "seller_correction_requests",
-        indexes = @Index(name = "ix_seller_correction_deadline", columnList = "state,deadline"))
+        indexes = {
+            @Index(name = "ix_seller_correction_deadline", columnList = "state,deadline"),
+            // 신청서별 최근 보완 요청을 찾습니다.
+            @Index(
+                    name = "ix_seller_correction_application",
+                    columnList = "application_id,created_at")
+        })
 public class SellerCorrectionRequest {
     public enum State {
         OPEN,
