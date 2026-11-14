@@ -9,7 +9,9 @@ import java.util.UUID;
 
 /** 광고성 수신 동의의 이력입니다. 가입 시 선택하지 않은 경우에도 초기 상태의 근거를 남깁니다. */
 @Entity
-@Table(schema = "account", name = "account_consent_histories")
+@Table(schema = "account", name = "account_consent_histories",
+        // 계정의 동의 이력 컬렉션을 계정 ID로 읽습니다.
+        indexes = @Index(name = "ix_account_consent_histories_account", columnList = "account_id"))
 public class AccountConsentHistory {
     @Id @UuidGenerator
     private UUID id;

@@ -51,7 +51,9 @@ import javax.imageio.ImageIO;
 @SpringBootTest(
         properties = {
             "spring.profiles.active=test",
-            "account.seller.corrections.expiration-enabled=false"
+            "account.seller.corrections.expiration-enabled=false",
+            // 판매자 기능만 검증하므로 로컬 .env의 탈퇴 기능 설정과 분리합니다.
+            "account.withdrawal.enabled=false"
         })
 @AutoConfigureMockMvc
 class SellerExtensionsIntegrationTest {

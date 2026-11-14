@@ -10,7 +10,11 @@ import java.util.UUID;
 /** 로그인 한 번마다 생성하는 세션입니다. 여러 기기의 로그인은 각각 별도로 유지합니다. */
 @Entity
 @Table(schema = "account", name = "auth_sessions",
-        indexes = @Index(name = "ix_auth_sessions_expires_at", columnList = "expires_at"))
+        indexes = {
+            @Index(name = "ix_auth_sessions_expires_at", columnList = "expires_at"),
+            // 비밀번호 변경·재설정·탈퇴 시 계정의 모든 세션을 폐기합니다.
+            @Index(name = "ix_auth_sessions_account", columnList = "account_id")
+        })
 public class AuthSession {
     @Id private UUID id;
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
