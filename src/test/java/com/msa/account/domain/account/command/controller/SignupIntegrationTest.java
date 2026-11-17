@@ -74,7 +74,8 @@ class SignupIntegrationTest {
         assertThat(account.getPasswordHash()).isNotEqualTo("Password!123");
         assertThat(count("account_interests")).isZero();
         assertThat(jdbc.queryForObject("select marketing_agreed from account.account_consents", Boolean.class)).isFalse();
-        assertThat(jdbc.queryForObject("select sale_start or personalized_recommendation from account.account_notification_settings", Boolean.class)).isFalse();
+        // 판매 시작 알림은 기본 켜짐, 맞춤 추천은 기본 꺼짐입니다.
+        assertThat(jdbc.queryForObject("select sale_start and not personalized_recommendation from account.account_notification_settings", Boolean.class)).isTrue();
         assertThat(count("account_consent_histories")).isEqualTo(1);
         var verification = verifications.findById("buyer@example.com").orElseThrow();
         assertThat(verification.getConsumedAt()).isNotNull();
@@ -98,14 +99,15 @@ class SignupIntegrationTest {
     }
 
     @Test
-    // 빈 알림 객체와 명시적인 null을 보내도 수신 동의로 해석하지 않습니다.
-    void defaultsExplicitNullAndEmptySettingsToFalse() throws Exception {
+    // 빈 알림 객체와 명시적인 null을 보내도 광고 수신 동의로 해석하지 않습니다. 판매 시작 알림만 기본 켜짐입니다.
+    void defaultsExplicitNullAndEmptySettings() throws Exception {
         signup("buyer@example.com", verify("buyer@example.com"),
                 ",\"notificationSettings\":{},\"marketingConsent\":null,\"interestCategories\":null")
                 .andExpect(status().isCreated());
         assertThat(count("account_interests")).isZero();
         assertThat(jdbc.queryForObject("select marketing_agreed from account.account_consents", Boolean.class)).isFalse();
-        assertThat(jdbc.queryForObject("select sale_start or personalized_recommendation from account.account_notification_settings", Boolean.class)).isFalse();
+        // 판매 시작 알림은 기본 켜짐, 맞춤 추천은 기본 꺼짐입니다.
+        assertThat(jdbc.queryForObject("select sale_start and not personalized_recommendation from account.account_notification_settings", Boolean.class)).isTrue();
     }
 
     @Test

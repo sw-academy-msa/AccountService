@@ -36,6 +36,19 @@ public class NotificationEligibilityServiceImpl implements NotificationEligibili
         return NotificationEligibilityResponse.builder().eligible(eligible).build();
     }
 
+    public NotificationEligibilityResponse checkSaleAlert(UUID accountId) {
+        boolean eligible =
+                accounts.findById(accountId)
+                        .map(
+                                a ->
+                                        a.getStatus() == AccountStatus.ACTIVE
+                                                && a.hasRole(Role.BUYER)
+                                                && a.getNotificationSettings() != null
+                                                && a.getNotificationSettings().isSaleStart())
+                        .orElse(false);
+        return NotificationEligibilityResponse.builder().eligible(eligible).build();
+    }
+
     /** 심사와 주문 안내는 분석/광고 동의를 요구하지 않으며 탈퇴·정지 계정은 제외합니다. */
     public NotificationEligibilityResponse checkTransactional(UUID accountId) {
         boolean eligible =

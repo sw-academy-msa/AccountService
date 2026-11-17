@@ -15,7 +15,8 @@ public class NotificationEligibilityController {
     /** 내부 Notification만 선택할 수 있는 수신 목적이며 공개 사용자 파라미터가 아닙니다. */
     public enum Purpose {
         PERSONALIZED,
-        TRANSACTIONAL
+        TRANSACTIONAL,
+        SALE_ALERT
     }
 
     private final NotificationEligibilityService service;
@@ -29,9 +30,11 @@ public class NotificationEligibilityController {
             @RequestParam UUID accountId,
             @RequestParam(defaultValue = "PERSONALIZED") Purpose purpose) {
         return ApiResponse.onSuccess(
-                (purpose == Purpose.TRANSACTIONAL
-                        ? service.checkTransactional(accountId)
-                        : service.check(accountId)),
+                switch (purpose) {
+                    case TRANSACTIONAL -> service.checkTransactional(accountId);
+                    case SALE_ALERT -> service.checkSaleAlert(accountId);
+                    case PERSONALIZED -> service.check(accountId);
+                },
                 SuccessCode.OK);
     }
 }

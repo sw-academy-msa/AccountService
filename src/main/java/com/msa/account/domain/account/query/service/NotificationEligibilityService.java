@@ -10,4 +10,7 @@ public interface NotificationEligibilityService {
 
     /** 거래/심사 알림이며 광고 동의와 분리합니다. */
     NotificationEligibilityResponse checkTransactional(UUID accountId);
+
+    /** 회원이 직접 신청한 상품 알림이며 판매 시작 알림 설정만 확인합니다. 광고 동의와 분리합니다. */
+    NotificationEligibilityResponse checkSaleAlert(UUID accountId);
 }
