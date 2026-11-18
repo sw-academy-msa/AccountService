@@ -54,7 +54,7 @@ public record SignupRequest(
         interestCategories = interestCategories == null ? Set.of()
                 : Collections.unmodifiableSet(new LinkedHashSet<>(interestCategories));
         notificationSettings = notificationSettings == null
-                ? SignupNotificationSettings.disabled() : notificationSettings;
+                ? SignupNotificationSettings.defaults() : notificationSettings;
         // 생략과 명시적 null도 미동의입니다. JSON 역직렬화 전에 기본값을 정합니다.
         marketingConsent = Boolean.TRUE.equals(marketingConsent);
     }

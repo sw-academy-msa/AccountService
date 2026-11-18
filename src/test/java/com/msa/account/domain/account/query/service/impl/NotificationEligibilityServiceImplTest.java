@@ -1,5 +1,6 @@
 package com.msa.account.domain.account.query.service.impl;
 
+import com.msa.account.domain.account.command.dto.request.SignupNotificationSettings;
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -55,5 +56,34 @@ class NotificationEligibilityServiceImplTest {
         assertThat(service.checkTransactional(id).eligible()).isTrue();
         when(account.getStatus()).thenReturn(AccountStatus.WITHDRAWN);
         assertThat(service.checkTransactional(id).eligible()).isFalse();
+    }
+
+    @Test
+    void saleAlertFollowsSaleStartSettingWithoutMarketingConsent() {
+        var repository = mock(AccountRepository.class);
+        var account = mock(Account.class);
+        var settings = mock(AccountNotificationSettings.class);
+        UUID id = UUID.randomUUID();
+        when(repository.findById(id)).thenReturn(Optional.of(account));
+        when(account.getStatus()).thenReturn(AccountStatus.ACTIVE);
+        when(account.hasRole(Role.BUYER)).thenReturn(true);
+        when(account.getNotificationSettings()).thenReturn(settings);
+        when(settings.isSaleStart()).thenReturn(true);
+        var service = new NotificationEligibilityServiceImpl(repository);
+        assertThat(service.checkSaleAlert(id).eligible()).isTrue();
+        when(settings.isSaleStart()).thenReturn(false);
+        assertThat(service.checkSaleAlert(id).eligible()).isFalse();
+        when(settings.isSaleStart()).thenReturn(true);
+        when(account.getStatus()).thenReturn(AccountStatus.WITHDRAWN);
+        assertThat(service.checkSaleAlert(id).eligible()).isFalse();
+    }
+
+    @Test
+    void signupTurnsSaleStartOnUnlessExplicitlyDisabled() {
+        assertThat(new SignupNotificationSettings(null, null).saleStart()).isTrue();
+        assertThat(new SignupNotificationSettings(null, null).personalizedRecommendation())
+                .isFalse();
+        assertThat(new SignupNotificationSettings(false, true).saleStart()).isFalse();
+        assertThat(SignupNotificationSettings.defaults().saleStart()).isTrue();
     }
 }
