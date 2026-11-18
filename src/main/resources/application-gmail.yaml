@@ -1,0 +1,24 @@
+# local,gmail 또는 prod,gmail 조합으로 활성화하는 Gmail SMTP 설정입니다.
+# 자격증명은 Git에서 제외한 루트 .env 또는 배포 환경변수로 주입합니다.
+spring:
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${MAIL_USERNAME}
+    # 일반 Google 비밀번호가 아닌 2단계 인증 후 발급한 앱 비밀번호입니다.
+    password: ${MAIL_PASSWORD}
+    default-encoding: UTF-8
+    properties:
+      mail.smtp.auth: true
+      mail.smtp.starttls.enable: true
+      mail.smtp.starttls.required: true
+      mail.smtp.ssl.checkserveridentity: true
+      # 외부 SMTP 연결에 제한 시간을 두어 무기한 대기를 방지합니다.
+      mail.smtp.connectiontimeout: 10000
+      mail.smtp.timeout: 10000
+      mail.smtp.writetimeout: 10000
+
+account:
+  email-verification:
+    # Gmail 로그인 계정을 발신자로 사용합니다.
+    from: ${MAIL_USERNAME}

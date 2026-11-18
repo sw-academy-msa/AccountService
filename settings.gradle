@@ -1,0 +1,2 @@
+// Gradle 프로젝트 이름이며 기본 빌드 산출물 이름에도 사용됩니다.
+rootProject.name = 'account'

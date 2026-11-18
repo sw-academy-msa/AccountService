@@ -1,0 +1,78 @@
+# 운영에는 두 Eureka URL을 쉼표로 구분하여 주입합니다. EC2 교체 시 주소도 갱신해야 합니다.
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_DEFAULT_ZONE}
+    healthcheck:
+      enabled: true
+  instance:
+    # 다른 EC2에서 접근 가능한 사설 주소와 호스트 공개 포트를 광고합니다.
+    hostname: ${SERVICE_HOSTNAME}
+    prefer-ip-address: false
+    instance-id: ${spring.application.name}:${SERVICE_INSTANCE_ID}
+    non-secure-port: ${SERVICE_PORT}
+    status-page-url-path: /actuator/health
+    health-check-url-path: /actuator/health
+
+# 운영 DB 접속 정보는 배포 환경에서 주입합니다.
+spring:
+  # 운영 SMTP 공급자와 자격증명은 배포 환경변수로 주입합니다.
+  mail:
+    host: ${MAIL_HOST}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
+    properties:
+      mail.smtp.auth: true
+      mail.smtp.starttls.enable: true
+      mail.smtp.starttls.required: true
+      mail.smtp.connectiontimeout: 3000
+      mail.smtp.timeout: 3000
+      mail.smtp.writetimeout: 3000
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: ${DB_POOL_MAX_SIZE:10}
+      minimum-idle: ${DB_POOL_MIN_IDLE:2}
+      connection-timeout: ${DB_CONNECTION_TIMEOUT_MS:30000}
+  jpa:
+    hibernate:
+      # 운영에서는 스키마를 자동 수정하지 않고 엔티티와의 일치 여부만 검사합니다.
+      ddl-auto: validate
+  output:
+    ansi:
+      enabled: never
+
+server:
+  forward-headers-strategy: native
+
+# A/B Account 인스턴스는 동일한 서명 키 파일을 비밀 볼륨으로 주입받아야 합니다.
+account:
+  seller:
+    storage:
+      bucket: ${SELLER_CERTIFICATE_BUCKET}
+  auth:
+    issuer: ${JWT_ISSUER}
+    signing-key-location: ${JWT_SIGNING_KEY_LOCATION}
+    cookie-secure: true
+    cookie-same-site: None
+    allowed-origins: ${APP_ALLOWED_ORIGINS:}
+
+logging:
+  level:
+    com.msa.account: INFO
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,prometheus
+
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
