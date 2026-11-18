@@ -68,9 +68,7 @@ public class ServiceTokenSecurityConfig {
                             jakarta.servlet.http.HttpServletResponse response,
                             jakarta.servlet.FilterChain chain)
                             throws jakarta.servlet.ServletException, java.io.IOException {
-                        if (environment.acceptsProfiles(
-                                        org.springframework.core.env.Profiles.of("prod"))
-                                && !request.isSecure()) {
+                        if (!transportAllowed(environment, request.isSecure())) {
                             denied.commence(
                                     request,
                                     response,
@@ -102,5 +100,18 @@ public class ServiceTokenSecurityConfig {
                 .httpBasic(b -> b.authenticationEntryPoint(denied))
                 .exceptionHandling(e -> e.authenticationEntryPoint(denied))
                 .build();
+    }
+
+    /**
+     * 운영은 TLS 요청만 토큰을 발급합니다. 서비스가 TLS 없이 사설망(VPC)에서만 통신하는 배포는
+     * account.service-auth.allow-plain-http=true로 평문 요청을 명시적으로 허용합니다.
+     */
+    static boolean transportAllowed(org.springframework.core.env.Environment environment, boolean secure) {
+        if (secure
+                || !environment.acceptsProfiles(org.springframework.core.env.Profiles.of("prod"))) {
+            return true;
+        }
+        return environment.getProperty(
+                "account.service-auth.allow-plain-http", Boolean.class, false);
     }
 }
