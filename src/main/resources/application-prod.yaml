@@ -51,6 +51,9 @@ server:
 
 # A/B Account 인스턴스는 동일한 서명 키 파일을 비밀 볼륨으로 주입받아야 합니다.
 account:
+  service-auth:
+    # AWS 운영은 서비스끼리 VPC 안에서 TLS 없이 통신합니다(외부는 ALB가 TLS 종료). TLS를 붙이면 환경 변수로 false로 바꿉니다.
+    allow-plain-http: ${ACCOUNT_SERVICE_AUTH_ALLOW_PLAIN_HTTP:true}
   seller:
     storage:
       bucket: ${SELLER_CERTIFICATE_BUCKET}
