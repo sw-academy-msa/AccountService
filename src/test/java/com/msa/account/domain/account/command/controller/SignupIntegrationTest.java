@@ -111,6 +111,14 @@ class SignupIntegrationTest {
     }
 
     @Test
+    // 알림 설정 객체 자체를 null로 보내도 빈 객체와 같은 기본값을 저장합니다.
+    void defaultsNullNotificationSettings() throws Exception {
+        signup("buyer@example.com", verify("buyer@example.com"), ",\"notificationSettings\":null")
+                .andExpect(status().isCreated());
+        assertThat(jdbc.queryForObject("select sale_start and not personalized_recommendation from account.account_notification_settings", Boolean.class)).isTrue();
+    }
+
+    @Test
     // DB 저장 실패 시 증명 소비도 롤백되므로 동일 증명으로 가입을 재시도할 수 있습니다.
     void rollsBackProofConsumptionWhenSavingFails() throws Exception {
         String proof = verify("buyer@example.com");
