@@ -73,6 +73,8 @@ account:
   service-auth:
     # 원문 비밀값은 Order만 보유하고 Account에는 기존 BCrypt 인코더의 해시만 공급합니다.
     enabled: ${ACCOUNT_SERVICE_AUTH_ENABLED:false}
+    # TLS 없이 VPC 안에서만 서비스끼리 통신하는 운영 배포는 true로 켭니다. 기본은 운영에서 TLS 요청만 허용합니다.
+    allow-plain-http: false
     token-ttl: 5m
     clients:
       order-command-service:
