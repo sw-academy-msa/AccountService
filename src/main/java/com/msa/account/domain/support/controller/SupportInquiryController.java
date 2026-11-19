@@ -1,6 +1,7 @@
 package com.msa.account.domain.support.controller;
 
-import com.msa.account.domain.support.dto.SupportDtos;
+import com.msa.account.domain.support.dto.request.SupportRequests;
+import com.msa.account.domain.support.dto.response.SupportResponses;
 import com.msa.account.domain.support.entity.SupportInquiry;
 import com.msa.account.domain.support.service.SupportInquiryService;
 import com.msa.account.global.response.ApiResponse;
@@ -30,15 +31,15 @@ public class SupportInquiryController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(summary = "1:1 문의 작성")
-    public ApiResponse<SupportDtos.Inquiry> create(
-            @AuthenticationPrincipal Jwt jwt, @Valid @RequestBody SupportDtos.Create request) {
+    public ApiResponse<SupportResponses.Inquiry> create(
+            @AuthenticationPrincipal Jwt jwt, @Valid @RequestBody SupportRequests.Create request) {
         return ApiResponse.onSuccess(
                 service.create(UUID.fromString(jwt.getSubject()), request), SuccessCode.CREATED);
     }
 
     @GetMapping
     @Operation(summary = "내 1:1 문의 목록")
-    public ApiResponse<SupportDtos.Page> mine(
+    public ApiResponse<SupportResponses.Page> mine(
             @AuthenticationPrincipal Jwt jwt,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
@@ -48,7 +49,7 @@ public class SupportInquiryController {
 
     @GetMapping("/{id}")
     @Operation(summary = "내 1:1 문의 상세")
-    public ApiResponse<SupportDtos.Inquiry> one(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id) {
+    public ApiResponse<SupportResponses.Inquiry> one(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id) {
         return ApiResponse.onSuccess(service.mineOne(UUID.fromString(jwt.getSubject()), id), SuccessCode.OK);
     }
 }

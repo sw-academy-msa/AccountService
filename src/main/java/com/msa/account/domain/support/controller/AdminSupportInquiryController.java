@@ -1,6 +1,7 @@
 package com.msa.account.domain.support.controller;
 
-import com.msa.account.domain.support.dto.SupportDtos;
+import com.msa.account.domain.support.dto.request.SupportRequests;
+import com.msa.account.domain.support.dto.response.SupportResponses;
 import com.msa.account.domain.support.entity.SupportInquiry;
 import com.msa.account.domain.support.service.SupportInquiryService;
 import com.msa.account.global.response.ApiResponse;
@@ -28,7 +29,7 @@ public class AdminSupportInquiryController {
 
     @GetMapping
     @Operation(summary = "1:1 문의 목록", description = "status=WAITING이면 답변 대기만 오래된 순으로, 없으면 전체 최근 순")
-    public ApiResponse<SupportDtos.Page> list(
+    public ApiResponse<SupportResponses.Page> list(
             @RequestParam(required = false) SupportInquiry.Status status,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "50") int size) {
@@ -37,10 +38,10 @@ public class AdminSupportInquiryController {
 
     @PutMapping("/{id}/answer")
     @Operation(summary = "1:1 문의 답변")
-    public ApiResponse<SupportDtos.Inquiry> answer(
+    public ApiResponse<SupportResponses.Inquiry> answer(
             @AuthenticationPrincipal Jwt jwt,
             @PathVariable UUID id,
-            @Valid @RequestBody SupportDtos.Answer request) {
+            @Valid @RequestBody SupportRequests.Answer request) {
         return ApiResponse.onSuccess(
                 service.answer(UUID.fromString(jwt.getSubject()), id, request), SuccessCode.OK);
     }
