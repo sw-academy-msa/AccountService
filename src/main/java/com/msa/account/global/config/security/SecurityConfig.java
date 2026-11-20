@@ -1,6 +1,8 @@
 package com.msa.account.global.config.security;
 
 import com.msa.account.global.error.*;
+import com.msa.account.domain.auth.query.service.AdminAccessService;
+import org.springframework.security.authorization.AuthorizationDecision;
 import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.MDC;
 import org.springframework.context.annotation.*;
@@ -24,7 +26,8 @@ import java.util.*;
 public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http, AuthProperties properties,
-            CookieCsrfTokenRepository csrfRepository, ObjectMapper mapper) throws Exception {
+            CookieCsrfTokenRepository csrfRepository, ObjectMapper mapper,
+            AdminAccessService adminAccess) throws Exception {
         var roleConverter = new JwtGrantedAuthoritiesConverter();
         roleConverter.setAuthoritiesClaimName("roles");
         roleConverter.setAuthorityPrefix("ROLE_");
@@ -48,6 +51,16 @@ public class SecurityConfig {
                                 exception instanceof CsrfException ? CommonErrorCode.CSRF_REJECTED : CommonErrorCode.FORBIDDEN, mapper)))
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        // JWT의 ADMIN은 필요조건이며 현재 DB 자격을 요청마다 추가 확인합니다.
+                        .requestMatchers("/api/v1/admin/**", "/api/v1/auth/admin-access")
+                        .access((authentication, context) -> {
+                            var current = authentication.get();
+                            boolean allowed = current instanceof JwtAuthenticationToken token
+                                    && current.getAuthorities().stream()
+                                            .anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()))
+                                    && adminAccess.isCurrentAdmin(token.getToken().getSubject());
+                            return new AuthorizationDecision(allowed);
+                        })
                         .requestMatchers("/actuator/health", "/actuator/health/**",
                                 "/api/v1/auth/signup", "/api/v1/auth/email-verifications",
                                 "/api/v1/auth/email-verifications/confirm", "/api/v1/signup-options",
