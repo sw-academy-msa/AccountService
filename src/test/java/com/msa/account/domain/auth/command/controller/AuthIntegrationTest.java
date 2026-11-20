@@ -90,6 +90,35 @@ class AuthIntegrationTest {
     }
 
     @Test
+    // DB에서 직접 권한을 지워도 서명과 만료가 유효한 기존 토큰은 즉시 거부합니다.
+    void rejectsExistingAdminTokenAfterDbRoleRemoval() throws Exception {
+        buyer.grantRole(Role.ADMIN, null, now.get());
+        accounts.saveAndFlush(buyer);
+        Login admin = login(csrf());
+        mvc.perform(get("/api/v1/auth/admin-access").header("Authorization", "Bearer " + admin.access()))
+                .andExpect(status().isNoContent()).andExpect(header().string("Cache-Control", "no-store"));
+        jdbc.update("delete from account.account_roles where account_id = ? and role = 'ADMIN'", buyer.getId());
+        mvc.perform(get("/api/v1/admin/support-inquiries").header("Authorization", "Bearer " + admin.access()))
+                .andExpect(status().isForbidden());
+        mvc.perform(get("/api/v1/auth/admin-access").header("Authorization", "Bearer " + admin.access()))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    // 정지와 이메일 인증 철회도 토큰 재발급이나 만료를 기다리지 않고 반영합니다.
+    void rejectsExistingAdminTokenAfterDbSuspensionOrVerificationRemoval() throws Exception {
+        buyer.grantRole(Role.ADMIN, null, now.get());
+        accounts.saveAndFlush(buyer);
+        Login admin = login(csrf());
+        jdbc.update("update account.accounts set status = 'SUSPENDED' where id = ?", buyer.getId());
+        mvc.perform(get("/api/v1/auth/admin-access").header("Authorization", "Bearer " + admin.access()))
+                .andExpect(status().isForbidden());
+        jdbc.update("update account.accounts set status = 'ACTIVE', email_verified_at = null where id = ?", buyer.getId());
+        mvc.perform(get("/api/v1/auth/admin-access").header("Authorization", "Bearer " + admin.access()))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
     // 쿠키를 자동 전송하는 엔드포인트는 유효한 CSRF 헤더 없이 실행되지 않습니다.
     void requiresCsrfForCookieEndpoints() throws Exception {
         mvc.perform(post("/api/v1/auth/login").contentType(MediaType.APPLICATION_JSON).content(credentials()))

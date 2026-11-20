@@ -16,6 +16,13 @@ import java.util.UUID;
  */
 public interface AccountRepository extends JpaRepository<Account, UUID> {
 
+    // 상태와 권한을 한 쿼리에서 확인해 요청 간 영속성 캐시나 지연 로딩에 의존하지 않습니다.
+    @Query("select (count(a) > 0) from Account a join a.roles r where a.id = :id "
+            + "and a.status = :status and a.emailVerifiedAt is not null and r.role = :role")
+    boolean hasCurrentRole(@Param("id") UUID id,
+            @Param("status") com.msa.account.domain.account.enums.AccountStatus status,
+            @Param("role") com.msa.account.domain.account.enums.Role role);
+
     // 정규화한 이메일이 이미 등록되어 있는지 확인합니다.
     boolean existsByEmail(String email);
 
