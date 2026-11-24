@@ -70,6 +70,11 @@ account:
     publisher-enabled: ${ACCOUNT_OUTBOX_PUBLISHER_ENABLED:false}
   withdrawal:
     enabled: ${ACCOUNT_WITHDRAWAL_ENABLED:false}
+  # 회원제는 Payment 금융 원본의 projection입니다. 운영 활성화 전까지 모두 false입니다.
+  membership:
+    api-enabled: ${MEMBERSHIP_API_ENABLED:false}
+    consumer-enabled: ${MEMBERSHIP_CONSUMER_ENABLED:false}
+    withdrawal-check-enabled: ${MEMBERSHIP_WITHDRAWAL_CHECK_ENABLED:false}
   service-auth:
     # 원문 비밀값은 Order만 보유하고 Account에는 기존 BCrypt 인코더의 해시만 공급합니다.
     enabled: ${ACCOUNT_SERVICE_AUTH_ENABLED:false}

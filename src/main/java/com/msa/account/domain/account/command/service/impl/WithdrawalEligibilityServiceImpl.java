@@ -5,6 +5,7 @@ import com.msa.account.domain.account.command.dto.response.WithdrawalLeaseRespon
 import com.msa.account.domain.account.command.service.*;
 import com.msa.account.domain.account.exception.*;
 import com.msa.account.domain.account.query.dto.response.WithdrawalEligibilityResponse;
+import com.msa.account.global.config.membership.MembershipProperties;
 
 import org.springframework.stereotype.Service;
 
@@ -17,11 +18,15 @@ import java.util.*;
 public class WithdrawalEligibilityServiceImpl implements WithdrawalEligibilityService {
     private final WithdrawalClient client;
     private final WithdrawalOperationService operations;
+    private final MembershipProperties membership;
 
     public WithdrawalEligibilityServiceImpl(
-            WithdrawalClient client, WithdrawalOperationService operations) {
+            WithdrawalClient client,
+            WithdrawalOperationService operations,
+            MembershipProperties membership) {
         this.client = client;
         this.operations = operations;
+        this.membership = membership;
     }
 
     public WithdrawalEligibilityResponse inspect(UUID account) {
@@ -42,6 +47,27 @@ public class WithdrawalEligibilityServiceImpl implements WithdrawalEligibilitySe
             if (!response.canWithdraw()) {
                 abort(lease.get(), false);
                 return response;
+            }
+            if (membership.withdrawalCheckEnabled()) {
+                // 유료기간 탈퇴는 무환불 즉시 종료이며 금융 갱신 중지가 확정된 뒤에만 계정을 탈퇴합니다.
+                var ended =
+                        client.exchange(
+                                "payment-service",
+                                "POST",
+                                memberships(account, lease.get()) + "/completion",
+                                null);
+                renew(lease.get());
+                long pending = count(ended, "pendingMemberships");
+                if (pending > 0) {
+                    abort(lease.get(), false);
+                    return WithdrawalEligibilityResponse.builder()
+                            .verified(true)
+                            .canWithdraw(false)
+                            .activeOrders(response.activeOrders())
+                            .activeSales(response.activeSales())
+                            .pendingSettlements(pending)
+                            .build();
+                }
             }
             operations.clear(lease.get());
             return response;
@@ -107,6 +133,17 @@ public class WithdrawalEligibilityServiceImpl implements WithdrawalEligibilitySe
                 page = Math.incrementExact(page);
             } while (next && pending == 0);
         }
+        if (membership.withdrawalCheckEnabled() && active == 0 && sales == 0 && pending == 0) {
+            // 결과 불명 청구나 카드 발급이 남아 있으면 탈퇴 뒤 청구를 막기 위해 거절합니다.
+            var paid =
+                    client.exchange(
+                            "payment-service",
+                            method,
+                            lease == null ? path + "/memberships" : memberships(account, lease),
+                            null);
+            renew(lease);
+            pending = Math.addExact(pending, count(paid, "pendingMemberships"));
+        }
         return WithdrawalEligibilityResponse.builder()
                 .verified(true)
                 .canWithdraw(active == 0 && sales == 0 && pending == 0)
@@ -137,7 +174,21 @@ public class WithdrawalEligibilityServiceImpl implements WithdrawalEligibilitySe
             } catch (RuntimeException ex) {
                 released = false;
             }
+        if (membership.withdrawalCheckEnabled())
+            try {
+                client.exchange(
+                        "payment-service", "DELETE", memberships(lease.accountId(), lease), null);
+            } catch (RuntimeException ex) {
+                released = false;
+            }
         if (released) operations.released(lease);
+    }
+
+    private String memberships(UUID account, WithdrawalLeaseResponse lease) {
+        return "/internal/v1/account-withdrawals/"
+                + account
+                + "/memberships/fences/"
+                + lease.operationId();
     }
 
     private long count(JsonNode data, String key) {
