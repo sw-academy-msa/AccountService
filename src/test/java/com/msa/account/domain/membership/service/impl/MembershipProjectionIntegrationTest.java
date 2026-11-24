@@ -230,9 +230,9 @@ class MembershipProjectionIntegrationTest {
         receive(
                 event(
                         UUID.randomUUID(),
-                        "MEMBERSHIP_CANCELLATION_SCHEDULED",
+                        "MEMBERSHIP_CANCELED",
                         1,
-                        1,
+                        0,
                         "CANCEL_SCHEDULED",
                         false,
                         until));
