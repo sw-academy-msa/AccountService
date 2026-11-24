@@ -28,7 +28,7 @@ public class MembershipProjectionServiceImpl implements MembershipProjectionServ
                     "MEMBERSHIP_RENEWED",
                     "MEMBERSHIP_RENEWAL_PENDING",
                     "MEMBERSHIP_PAYMENT_FAILED",
-                    "MEMBERSHIP_CANCELLATION_SCHEDULED",
+                    "MEMBERSHIP_CANCELED",
                     "MEMBERSHIP_EXPIRED",
                     "MEMBERSHIP_WITHDRAWN");
     private static final Set<String> STATES =

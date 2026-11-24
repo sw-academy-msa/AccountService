@@ -96,7 +96,8 @@ public class Membership {
         this.subscriptionId = subscriptionId;
         this.generation = generation;
         this.sourceVersion = sourceVersion;
-        this.cycleNumber = cycleNumber;
+        // 해지와 탈퇴 결과는 청구 기간 번호 0으로 오므로 마지막 납부기간 번호를 유지합니다.
+        if (cycleNumber > 0) this.cycleNumber = cycleNumber;
         this.state = state;
         this.autoRenew = autoRenew;
         this.periodStart = periodStart;
