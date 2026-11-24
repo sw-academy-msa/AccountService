@@ -1,5 +1,7 @@
 package com.msa.account.domain.membership.command.service.impl;
 
+import com.msa.account.domain.account.enums.*;
+import com.msa.account.domain.account.repository.AccountRepository;
 import com.msa.account.domain.membership.command.service.MembershipCommandService;
 import com.msa.account.domain.membership.dto.response.MembershipCancellationResponse;
 import com.msa.account.domain.membership.exception.*;
@@ -20,6 +22,7 @@ import java.util.*;
 @Service
 public class MembershipCommandServiceImpl implements MembershipCommandService {
     private final MembershipRepository memberships;
+    private final AccountRepository accounts;
     private final OutboxEventRepository outbox;
     private final MembershipProperties properties;
     private final ObjectMapper json;
@@ -27,11 +30,13 @@ public class MembershipCommandServiceImpl implements MembershipCommandService {
 
     public MembershipCommandServiceImpl(
             MembershipRepository memberships,
+            AccountRepository accounts,
             OutboxEventRepository outbox,
             MembershipProperties properties,
             ObjectMapper json,
             Clock clock) {
         this.memberships = memberships;
+        this.accounts = accounts;
         this.outbox = outbox;
         this.properties = properties;
         this.json = json;
@@ -42,6 +47,12 @@ public class MembershipCommandServiceImpl implements MembershipCommandService {
     public MembershipCancellationResponse cancel(UUID account) {
         if (!properties.apiEnabled())
             throw new MembershipException(MembershipErrorCode.UNAVAILABLE);
+        // 토큰 만료 전이라도 탈퇴했거나 BUYER 권한이 없는 계정은 현재 DB 기준으로 거절합니다.
+        var owner = accounts.findById(account).orElse(null);
+        if (owner == null
+                || owner.getStatus() != AccountStatus.ACTIVE
+                || !owner.getRoles().contains(Role.BUYER))
+            throw new MembershipException(MembershipErrorCode.NOT_CANCELABLE);
         var m =
                 memberships
                         .lock(account)

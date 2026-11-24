@@ -184,6 +184,11 @@ class MembershipProjectionIntegrationTest {
 
     @Test
     void cancellationWritesOneCommandPerGeneration() {
+        var buyer =
+                Account.registerBuyer(
+                        "cancel-" + UUID.randomUUID() + "@example.com", "hash", "김해지");
+        buyer.initializeSignup(now.get(), Set.of(), false, false, false, now.get());
+        account = accounts.saveAndFlush(buyer).getId();
         receive(
                 event(
                         UUID.randomUUID(),
@@ -252,7 +257,9 @@ class MembershipProjectionIntegrationTest {
 
     @Test
     void userAccessTokenCarriesMembershipClaim() {
-        var buyer = Account.registerBuyer("member@example.com", "hash", "김회원");
+        var buyer =
+                Account.registerBuyer(
+                        "member-" + UUID.randomUUID() + "@example.com", "hash", "김회원");
         buyer.initializeSignup(now.get(), Set.of(), false, false, false, now.get());
         buyer = accounts.saveAndFlush(buyer);
         account = buyer.getId();

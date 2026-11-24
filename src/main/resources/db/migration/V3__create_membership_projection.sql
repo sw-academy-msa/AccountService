@@ -1,6 +1,7 @@
 -- 회원 자격 projection과 수신 기록만 추가하며 기존 계정 데이터는 수정하지 않습니다.
 alter table account.notification_outbox add column failed_at timestamp(6) with time zone;
 alter table account.notification_outbox add column last_failure_code varchar(64);
+alter table account.withdrawal_operations add column membership_fenced boolean not null default false;
 
 create table account.memberships (
     account_id uuid not null,

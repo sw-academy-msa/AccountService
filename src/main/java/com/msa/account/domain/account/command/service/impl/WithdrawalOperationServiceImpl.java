@@ -72,6 +72,19 @@ public class WithdrawalOperationServiceImpl implements WithdrawalOperationServic
                 .ifPresent(WithdrawalOperation::released);
     }
 
+    public void fenceMembership(WithdrawalLeaseResponse lease) {
+        required(lease, "CHECKING").fenceMembership();
+    }
+
+    @Transactional(readOnly = true)
+    public boolean membershipFenced(WithdrawalLeaseResponse lease) {
+        return operations
+                .findById(lease.accountId())
+                .filter(w -> w.getOperationId().equals(lease.operationId()))
+                .map(WithdrawalOperation::isMembershipFenced)
+                .orElse(false);
+    }
+
     @Transactional(readOnly = true)
     public List<WithdrawalLeaseResponse> due() {
         return operations.due(clock.instant(), PageRequest.of(0, 25)).stream()

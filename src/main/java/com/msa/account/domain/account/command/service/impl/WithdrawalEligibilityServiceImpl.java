@@ -135,6 +135,7 @@ public class WithdrawalEligibilityServiceImpl implements WithdrawalEligibilitySe
         }
         if (membership.withdrawalCheckEnabled() && active == 0 && sales == 0 && pending == 0) {
             // 결과 불명 청구나 카드 발급이 남아 있으면 탈퇴 뒤 청구를 막기 위해 거절합니다.
+            if (lease != null) operations.fenceMembership(lease);
             var paid =
                     client.exchange(
                             "payment-service",
@@ -174,7 +175,8 @@ public class WithdrawalEligibilityServiceImpl implements WithdrawalEligibilitySe
             } catch (RuntimeException ex) {
                 released = false;
             }
-        if (membership.withdrawalCheckEnabled())
+        // 플래그를 끈 뒤에도 차단을 요청했던 작업은 Payment 해제가 확인될 때까지 회수합니다.
+        if (operations.membershipFenced(lease))
             try {
                 client.exchange(
                         "payment-service", "DELETE", memberships(lease.accountId(), lease), null);

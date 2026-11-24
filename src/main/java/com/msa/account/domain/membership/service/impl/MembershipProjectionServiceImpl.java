@@ -196,6 +196,7 @@ public class MembershipProjectionServiceImpl implements MembershipProjectionServ
                 || e.eventId() == null
                 || !Integer.valueOf(1).equals(e.schemaVersion())
                 || !"PAYMENT".equals(e.source())
+                || e.type() == null
                 || !TYPES.contains(e.type())
                 || e.accountId() == null
                 || !e.accountId().toString().equals(key)
@@ -206,6 +207,7 @@ public class MembershipProjectionServiceImpl implements MembershipProjectionServ
                 || e.aggregateVersion() < 1
                 || e.cycleNumber() == null
                 || e.cycleNumber() < 0
+                || e.state() == null
                 || !STATES.contains(e.state())
                 || e.autoRenew() == null
                 || e.amount() == null
