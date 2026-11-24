@@ -147,3 +147,13 @@ monitoring:
 
   # Outbox 집계 스케줄은 명시 활성화하며 테스트/미설정 환경에서 DB를 주기 조회하지 않습니다.
   outbox-enabled: ${MONITORING_OUTBOX_ENABLED:false}
+
+# 장애 감지를 위해 heartbeat와 레지스트리 갱신 주기를 명시합니다.
+eureka:
+  client:
+    # 서버에서 제거된 인스턴스를 5초 주기로 반영합니다.
+    registry-fetch-interval-seconds: 5
+  instance:
+    # heartbeat 3회 누락에 해당하는 30초 후 만료 대상으로 판단합니다.
+    lease-renewal-interval-in-seconds: 10
+    lease-expiration-duration-in-seconds: 30
