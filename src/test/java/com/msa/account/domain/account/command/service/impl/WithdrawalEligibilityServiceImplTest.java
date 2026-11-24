@@ -16,7 +16,9 @@ class WithdrawalEligibilityServiceImplTest {
                                 com.msa.account.domain.account.client.WithdrawalClient.class),
                         org.mockito.Mockito.mock(
                                 com.msa.account.domain.account.command.service
-                                        .WithdrawalOperationService.class));
+                                        .WithdrawalOperationService.class),
+                        new com.msa.account.global.config.membership.MembershipProperties(
+                                false, false, false));
         var id = UUID.randomUUID();
         assertThat(service.inspect(id).verified()).isFalse();
         assertThat(service.acquireClearance(id).canWithdraw()).isFalse();

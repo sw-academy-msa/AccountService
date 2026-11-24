@@ -14,4 +14,8 @@ public interface BusinessNoticeService {
             UUID target,
             UUID related,
             Instant deadline);
+
+    /** 회원제 알림은 전용 토픽과 MEMBERSHIP 출처로 같은 본문 계약을 사용합니다. */
+    void enqueueMembership(
+            UUID account, String kind, UUID aggregate, long version, UUID target, Instant deadline);
 }

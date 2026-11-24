@@ -5,6 +5,7 @@ import com.msa.account.domain.auth.command.dto.response.IssuedJwt;
 import com.msa.account.domain.auth.command.dto.response.ServiceTokenResponse;
 import com.msa.account.domain.auth.command.dto.response.TokenResponse;
 import com.msa.account.domain.auth.command.service.AccessTokenService;
+import com.msa.account.domain.membership.query.service.MembershipQueryService;
 import com.msa.account.global.config.security.AuthProperties;
 import com.nimbusds.jose.jwk.RSAKey;
 
@@ -23,17 +24,23 @@ public class AccessTokenServiceImpl implements AccessTokenService {
     private final AuthProperties properties;
     private final RSAKey key;
     private final Clock clock;
+    private final MembershipQueryService memberships;
 
     public AccessTokenServiceImpl(
-            JwtEncoder encoder, AuthProperties properties, RSAKey key, Clock clock) {
+            JwtEncoder encoder,
+            AuthProperties properties,
+            RSAKey key,
+            Clock clock,
+            MembershipQueryService memberships) {
         this.encoder = encoder;
         this.properties = properties;
         this.key = key;
         this.clock = clock;
+        this.memberships = memberships;
     }
 
     @Override
-    // sub는 accountId이며 roles는 발급 시점의 스냅샷입니다.
+    // sub는 accountId이며 roles와 membership은 발급 시점의 스냅샷입니다.
     public TokenResponse issue(Account account) {
         Set<String> roles =
                 account.getRoles().stream()
@@ -43,7 +50,11 @@ public class AccessTokenServiceImpl implements AccessTokenService {
                 sign(
                         account.getId(),
                         roles,
-                        Map.of("principal_type", "user"),
+                        Map.of(
+                                "principal_type",
+                                "user",
+                                "membership",
+                                memberships.claim(account.getId())),
                         properties.accessTtl());
         return TokenResponse.builder()
                 .accessToken(signed.value())

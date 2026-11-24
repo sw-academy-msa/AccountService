@@ -37,9 +37,53 @@ public class BusinessNoticeServiceImpl implements BusinessNoticeService {
             UUID target,
             UUID related,
             Instant deadline) {
+        write(
+                "ACCOUNT",
+                "stockdrop.notifications.account.v1",
+                account,
+                kind,
+                aggregate,
+                version,
+                targetType,
+                target,
+                related,
+                deadline);
+    }
+
+    public void enqueueMembership(
+            UUID account,
+            String kind,
+            UUID aggregate,
+            long version,
+            UUID target,
+            Instant deadline) {
+        write(
+                "MEMBERSHIP",
+                "stockdrop.notifications.membership.v1",
+                account,
+                kind,
+                aggregate,
+                version,
+                "MEMBERSHIP",
+                target,
+                null,
+                deadline);
+    }
+
+    private void write(
+            String source,
+            String topic,
+            UUID account,
+            String kind,
+            UUID aggregate,
+            long version,
+            String targetType,
+            UUID target,
+            UUID related,
+            Instant deadline) {
         if (account == null || aggregate == null || target == null || version < 0)
             throw new BusinessException(CommonErrorCode.INVALID_REQUEST);
-        String identity = "ACCOUNT:" + kind + ":" + aggregate + ":" + version + ":" + account;
+        String identity = source + ":" + kind + ":" + aggregate + ":" + version + ":" + account;
         UUID id = UUID.nameUUIDFromBytes(identity.getBytes(StandardCharsets.UTF_8));
         // 중복 호출은 최초 시각과 본문을 유지합니다. 업무 원본 잠금이 수신자와 버전의 변경을 직렬화합니다.
         var prior = outbox.findById(id);
@@ -49,7 +93,7 @@ public class BusinessNoticeServiceImpl implements BusinessNoticeService {
                         .eventId(id)
                         .schemaVersion(1)
                         .type("BUSINESS_NOTIFICATION")
-                        .source("ACCOUNT")
+                        .source(source)
                         .accountId(account)
                         .notificationType(kind)
                         .aggregateId(aggregate)
@@ -63,11 +107,6 @@ public class BusinessNoticeServiceImpl implements BusinessNoticeService {
         String payload = json.writeValueAsString(event);
         if (payload.getBytes(StandardCharsets.UTF_8).length > 16384)
             throw new BusinessException(CommonErrorCode.PAYLOAD_TOO_LARGE);
-        outbox.insertBusinessNotice(
-                id,
-                "stockdrop.notifications.account.v1",
-                aggregate.toString(),
-                payload,
-                clock.instant());
+        outbox.insertBusinessNotice(id, topic, aggregate.toString(), payload, clock.instant());
     }
 }

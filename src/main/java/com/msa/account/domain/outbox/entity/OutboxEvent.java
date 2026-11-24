@@ -43,6 +43,12 @@ public class OutboxEvent {
     public Instant nextAttemptAt;
 
     public Instant publishedAt;
+    // 회원제 행만 발행 실패 한도 초과 시 격리합니다. 삭제나 성공 처리 없이 운영자가 같은 eventId로 재발행합니다.
+    public Instant failedAt;
+
+    @Column(length = 64)
+    public String lastFailureCode;
+
     public int attempts;
 
     protected OutboxEvent() {}

@@ -18,5 +18,10 @@ public interface WithdrawalOperationService {
 
     void released(WithdrawalLeaseResponse lease);
 
+    /** Payment 회원제 차단을 요청하기 전에 기록해 플래그를 꺼도 해제를 빠뜨리지 않게 합니다. */
+    void fenceMembership(WithdrawalLeaseResponse lease);
+
+    boolean membershipFenced(WithdrawalLeaseResponse lease);
+
     List<WithdrawalLeaseResponse> due();
 }
