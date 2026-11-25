@@ -35,15 +35,19 @@ public class NotificationEligibilitySecurityConfig {
         time.setClock(clock);
         OAuth2TokenValidator<Jwt> contract =
                 jwt -> {
-                    var client = services.clients().get("notification-service");
+                    String clientId = jwt.getClaimAsString("client_id");
+                    var client = clientId == null ? null : services.clients().get(clientId);
                     String scopes = jwt.getClaimAsString("scope");
                     boolean valid =
                             services.enabled()
                                     && client != null
                                     && client.subject() != null
                                     && client.subject().toString().equals(jwt.getSubject())
-                                    && "notification-service"
-                                            .equals(jwt.getClaimAsString("client_id"))
+                                    && Set.of(
+                                                    "notification-service",
+                                                    "coupon-service",
+                                                    "ai-service")
+                                            .contains(clientId)
                                     && "service".equals(jwt.getClaimAsString("principal_type"))
                                     && jwt.getAudience() != null
                                     && jwt.getAudience().contains(auth.audience())
