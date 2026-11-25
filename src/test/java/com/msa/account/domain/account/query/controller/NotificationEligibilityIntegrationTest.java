@@ -43,6 +43,16 @@ class NotificationEligibilityIntegrationTest {
         p.add(
                 "account.service-auth.clients.notification-service.scopes",
                 () -> "account.notifications.read,ai.personalization.read");
+        for (String client : List.of("coupon-service", "ai-service")) {
+            UUID subject = UUID.randomUUID();
+            p.add("account.service-auth.clients." + client + ".subject", subject::toString);
+            p.add(
+                    "account.service-auth.clients." + client + ".secret-hash",
+                    () -> new BCryptPasswordEncoder(10).encode(SECRET));
+            p.add(
+                    "account.service-auth.clients." + client + ".scopes",
+                    () -> "account.notifications.read");
+        }
         // 기존 Order 기본 클라이언트도 활성화된 계약에 맞는 합성 값만 제공합니다.
         p.add(
                 "account.service-auth.clients.order-command-service.subject",
@@ -57,16 +67,22 @@ class NotificationEligibilityIntegrationTest {
     @Autowired RSAKey key;
 
     String issue() throws Exception {
+        return issue("notification-service");
+    }
+
+    String issue(String client) throws Exception {
         return mapper.readTree(
                         mvc.perform(
                                         post("/internal/v1/auth/service-tokens")
-                                                .with(httpBasic("notification-service", SECRET))
+                                                .with(httpBasic(client, SECRET))
                                                 .contentType("application/x-www-form-urlencoded")
                                                 .param("grant_type", "client_credentials")
                                                 .param(
                                                         "scope",
-                                                        "account.notifications.read"
-                                                                + " ai.personalization.read"))
+                                                        client.equals("notification-service")
+                                                                ? "account.notifications.read"
+                                                                      + " ai.personalization.read"
+                                                                : "account.notifications.read"))
                                 .andExpect(status().isOk())
                                 .andReturn()
                                 .getResponse()
@@ -83,6 +99,23 @@ class NotificationEligibilityIntegrationTest {
                                 .header("Authorization", "Bearer " + issue()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.eligible").value(false));
+    }
+
+    @Test
+    void couponAndAiReadLatestConsentThroughTheSameInternalContract() throws Exception {
+        for (String client : List.of("coupon-service", "ai-service")) {
+            mvc.perform(
+                            get("/internal/v1/notification-eligibility")
+                                    .param("accountId", UUID.randomUUID().toString())
+                                    .param("purpose", "PERSONALIZED")
+                                    .header("Authorization", "Bearer " + issue(client)))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.data.eligible").value(false));
+            mvc.perform(
+                            get("/api/v1/accounts/me")
+                                    .header("Authorization", "Bearer " + issue(client)))
+                    .andExpect(status().isUnauthorized());
+        }
     }
 
     @Test
