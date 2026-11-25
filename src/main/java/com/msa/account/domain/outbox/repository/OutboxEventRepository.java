@@ -22,7 +22,7 @@ public interface OutboxEventRepository extends JpaRepository<OutboxEvent, UUID> 
             value =
                     """
                     select * from account.notification_outbox
-                    where published_at is null and next_attempt_at <= :now
+                    where published_at is null and failed_at is null and next_attempt_at <= :now
                     order by created_at,id limit 1 for update skip locked
                     """,
             nativeQuery = true)

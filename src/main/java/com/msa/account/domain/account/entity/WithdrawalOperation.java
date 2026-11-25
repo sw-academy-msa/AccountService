@@ -31,6 +31,10 @@ public class WithdrawalOperation {
     @Column(nullable = false)
     private Instant nextAt;
 
+    // Payment 회원제 차단을 요청한 작업입니다. 해제가 확인될 때까지 회수 대상에서 빠지지 않습니다.
+    @Column(nullable = false)
+    private boolean membershipFenced;
+
     @Builder
     public WithdrawalOperation(UUID accountId, Instant now) {
         this.accountId = accountId;
@@ -40,6 +44,7 @@ public class WithdrawalOperation {
     public void restart(Instant now) {
         operationId = UUID.randomUUID();
         state = "CHECKING";
+        membershipFenced = false;
         validUntil = now.plusSeconds(120);
         nextAt = validUntil;
     }
@@ -47,6 +52,10 @@ public class WithdrawalOperation {
     public void renew(Instant now) {
         validUntil = now.plusSeconds(120);
         nextAt = validUntil;
+    }
+
+    public void fenceMembership() {
+        membershipFenced = true;
     }
 
     public void cleared() {

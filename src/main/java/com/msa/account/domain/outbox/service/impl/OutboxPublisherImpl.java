@@ -48,6 +48,13 @@ public class OutboxPublisherImpl implements OutboxPublisher {
             long delay = Math.min(60, 1L << Math.min(6, event.attempts));
             event.attempts++;
             event.nextAttemptAt = clock.instant().plusSeconds(delay);
+            if ("stockdrop.membership.commands.private.v1".equals(event.topic)) {
+                event.lastFailureCode = "MEMBERSHIP_OUTBOX_SEND_FAILED";
+                if (event.attempts >= 20) {
+                    event.failedAt = clock.instant();
+                    log.error("Membership outbox quarantined eventId={}", event.id);
+                }
+            }
             // 메시지·본문·스택 대신 전송 원인의 타입만 기록해 민감정보 노출을 막습니다.
             Throwable cause =
                     failure instanceof ExecutionException && failure.getCause() != null

@@ -42,6 +42,8 @@ public record ServiceAuthProperties(
                                 || c.scopes().isEmpty()
                                 || !Set.of(
                                                 "product.stock",
+                                                "coupon.lock",
+                                                "order.coupon.read",
                                                 "ai.personalization.read",
                                                 "account.notifications.read")
                                         .containsAll(c.scopes())) {
