@@ -59,6 +59,9 @@ public class Membership {
     private UUID cancelCommandId;
     private Long cancelGeneration;
 
+    // Payment 결과를 기다리는 해지 취소 명령 ID입니다. 결과를 받으면 비웁니다.
+    private UUID cancelWithdrawCommandId;
+
     @Version
     @Column(nullable = false)
     private long rowVersion;
@@ -117,8 +120,26 @@ public class Membership {
         commandVersion = Math.addExact(commandVersion, 1);
         cancelCommandId = UUID.randomUUID();
         cancelGeneration = generation;
+        cancelWithdrawCommandId = null;
         updatedAt = now;
         return cancelCommandId;
+    }
+
+    /** 결과를 기다리는 해지 취소는 처음 만든 명령 ID를 다시 사용합니다. */
+    public UUID requestCancelWithdrawal(Instant now) {
+        if (cancelWithdrawCommandId != null) return cancelWithdrawCommandId;
+        commandVersion = Math.addExact(commandVersion, 1);
+        cancelWithdrawCommandId = UUID.randomUUID();
+        // 해지 취소 뒤 다시 해지하면 새 명령을 만들도록 해지 요청 표시를 지웁니다.
+        cancelCommandId = null;
+        cancelGeneration = null;
+        updatedAt = now;
+        return cancelWithdrawCommandId;
+    }
+
+    /** Payment가 해지 취소를 반영하거나 거절한 결과를 받으면 처리 중 표시를 끝냅니다. */
+    public void finishCancelWithdrawal() {
+        cancelWithdrawCommandId = null;
     }
 
     /** 혜택 종료 시각 전의 유효 상태만 회원으로 봅니다. 만료 이벤트 지연으로 혜택을 연장하지 않습니다. */

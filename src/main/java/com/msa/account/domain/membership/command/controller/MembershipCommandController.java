@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
 
-/** 해지 명령 접수까지만 보장합니다. 금융 반영 뒤 기존 refresh로 토큰을 다시 받습니다. */
+/** 해지와 해지 취소 명령 접수까지만 보장합니다. 금융 반영 뒤 기존 refresh로 토큰을 다시 받습니다. */
 @RestController
 @RequestMapping("/api/v1/accounts/me/membership")
 @PreAuthorize("hasRole('BUYER') and principal.claims['principal_type'] == 'user'")
@@ -34,5 +34,17 @@ public class MembershipCommandController {
                 .body(
                         ApiResponse.onSuccess(
                                 service.cancel(UUID.fromString(jwt.getSubject())), SuccessCode.OK));
+    }
+
+    @DeleteMapping("/cancellation")
+    @Operation(summary = "본인 멤버십 해지 예약 취소 요청")
+    public ResponseEntity<ApiResponse<MembershipCancellationResponse>> withdrawCancellation(
+            @AuthenticationPrincipal Jwt jwt) {
+        return ResponseEntity.status(HttpStatus.ACCEPTED)
+                .cacheControl(CacheControl.noStore())
+                .body(
+                        ApiResponse.onSuccess(
+                                service.withdrawCancellation(UUID.fromString(jwt.getSubject())),
+                                SuccessCode.OK));
     }
 }
