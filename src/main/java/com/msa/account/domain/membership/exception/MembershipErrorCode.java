@@ -7,6 +7,10 @@ import org.springframework.http.HttpStatus;
 /** 회원제 API의 HTTP 상태, 식별 코드, 사용자 메시지를 정의합니다. */
 public enum MembershipErrorCode implements ErrorCode {
     NOT_CANCELABLE(HttpStatus.CONFLICT, "MEMBERSHIP_NOT_CANCELABLE", "해지할 수 있는 멤버십이 없습니다."),
+    NOT_WITHDRAWABLE(
+            HttpStatus.CONFLICT,
+            "MEMBERSHIP_CANCEL_NOT_WITHDRAWABLE",
+            "취소할 수 있는 해지 예약이 없습니다."),
     UNAVAILABLE(
             HttpStatus.SERVICE_UNAVAILABLE,
             "MEMBERSHIP_UNAVAILABLE",

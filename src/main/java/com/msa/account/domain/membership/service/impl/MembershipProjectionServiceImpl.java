@@ -29,6 +29,8 @@ public class MembershipProjectionServiceImpl implements MembershipProjectionServ
                     "MEMBERSHIP_RENEWAL_PENDING",
                     "MEMBERSHIP_PAYMENT_FAILED",
                     "MEMBERSHIP_CANCELED",
+                    "MEMBERSHIP_CANCEL_WITHDRAWN",
+                    "MEMBERSHIP_CANCEL_WITHDRAW_REJECTED",
                     "MEMBERSHIP_EXPIRED",
                     "MEMBERSHIP_WITHDRAWN");
     private static final Set<String> STATES =
@@ -96,6 +98,9 @@ public class MembershipProjectionServiceImpl implements MembershipProjectionServ
                         e.amount(),
                         e.currency(),
                         now);
+        // 해지 취소 결과는 버전과 무관하게 처리 중 표시를 끝내 재요청을 받을 수 있게 합니다.
+        if (Set.of("MEMBERSHIP_CANCEL_WITHDRAWN", "MEMBERSHIP_CANCEL_WITHDRAW_REJECTED")
+                .contains(e.type())) m.finishCancelWithdrawal();
         receipts.save(
                 MembershipEventReceipt.builder()
                         .eventId(e.eventId())

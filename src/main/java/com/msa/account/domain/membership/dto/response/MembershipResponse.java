@@ -18,6 +18,7 @@ public record MembershipResponse(
         String currency,
         long sourceVersion,
         boolean cancelRequested,
+        boolean cancelWithdrawalRequested,
         Instant updatedAt) {
     public static MembershipResponse from(Membership m, Instant now) {
         if (m == null || "NONE".equals(m.getState()))
@@ -34,6 +35,7 @@ public record MembershipResponse(
                 .cancelRequested(
                         m.getCancelGeneration() != null
                                 && m.getCancelGeneration() == m.getGeneration())
+                .cancelWithdrawalRequested(m.getCancelWithdrawCommandId() != null)
                 .updatedAt(m.getUpdatedAt())
                 .build();
     }

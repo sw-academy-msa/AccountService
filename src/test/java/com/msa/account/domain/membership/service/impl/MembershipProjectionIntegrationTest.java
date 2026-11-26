@@ -225,6 +225,87 @@ class MembershipProjectionIntegrationTest {
     }
 
     @Test
+    void cancellationWithdrawalWritesOneCommandAndEndsOnPaymentResult() {
+        var buyer =
+                Account.registerBuyer(
+                        "withdraw-" + UUID.randomUUID() + "@example.com", "hash", "김철회");
+        buyer.initializeSignup(now.get(), Set.of(), false, false, false, now.get());
+        account = accounts.saveAndFlush(buyer).getId();
+        Instant until = Instant.parse("2030-02-01T00:00:00Z");
+        receive(event(UUID.randomUUID(), "MEMBERSHIP_STARTED", 1, 1, "ACTIVE", true, until));
+        // 해지 예약 전에는 철회할 해지가 없습니다.
+        assertThatThrownBy(() -> commands.withdrawCancellation(account))
+                .isInstanceOf(MembershipException.class);
+        commands.cancel(account);
+        receive(
+                event(
+                        UUID.randomUUID(),
+                        "MEMBERSHIP_CANCELED",
+                        2,
+                        0,
+                        "CANCEL_SCHEDULED",
+                        false,
+                        until));
+        var first = commands.withdrawCancellation(account);
+        var again = commands.withdrawCancellation(account);
+        assertThat(again.commandId()).isEqualTo(first.commandId());
+        assertThat(first.refreshRequired()).isTrue();
+        var body = json.readTree(outbox.findById(first.commandId()).orElseThrow().payload);
+        assertThat(body.path("type").asText()).isEqualTo("MEMBERSHIP_CANCEL_WITHDRAW_REQUESTED");
+        assertThat(body.path("commandVersion").asLong()).isEqualTo(2);
+        assertThat(body.path("subscriptionId").asText()).isEqualTo(subscription.toString());
+        var pending = queries.get(account);
+        assertThat(pending.cancelWithdrawalRequested()).isTrue();
+        assertThat(pending.cancelRequested()).isFalse();
+        assertThat(pending.state()).isEqualTo("CANCEL_SCHEDULED");
+        // 거절 결과는 상태를 유지하고 처리 중 표시만 끝내 다시 요청할 수 있게 합니다.
+        receive(
+                event(
+                        UUID.randomUUID(),
+                        "MEMBERSHIP_CANCEL_WITHDRAW_REJECTED",
+                        3,
+                        0,
+                        "CANCEL_SCHEDULED",
+                        false,
+                        until));
+        assertThat(queries.get(account).cancelWithdrawalRequested()).isFalse();
+        var retry = commands.withdrawCancellation(account);
+        assertThat(retry.commandId()).isNotEqualTo(first.commandId());
+        receive(
+                event(
+                        UUID.randomUUID(),
+                        "MEMBERSHIP_CANCEL_WITHDRAWN",
+                        4,
+                        0,
+                        "ACTIVE",
+                        true,
+                        until));
+        var restored = queries.get(account);
+        assertThat(restored.state()).isEqualTo("ACTIVE");
+        assertThat(restored.autoRenew()).isTrue();
+        assertThat(restored.cancelWithdrawalRequested()).isFalse();
+        assertThat(queries.claim(account)).containsEntry("active", true);
+        // 철회 뒤 다시 해지하면 새 명령 버전으로 접수합니다.
+        var cancelAgain = commands.cancel(account);
+        var cancelBody =
+                json.readTree(outbox.findById(cancelAgain.commandId()).orElseThrow().payload);
+        assertThat(cancelBody.path("commandVersion").asLong()).isEqualTo(4);
+        // 혜택 종료 뒤에는 해지 취소를 받지 않습니다.
+        receive(
+                event(
+                        UUID.randomUUID(),
+                        "MEMBERSHIP_CANCELED",
+                        5,
+                        0,
+                        "CANCEL_SCHEDULED",
+                        false,
+                        until));
+        now.set(until);
+        assertThatThrownBy(() -> commands.withdrawCancellation(account))
+                .isInstanceOf(MembershipException.class);
+    }
+
+    @Test
     void expiringNoticeIsCreatedOncePerPaidPeriod() {
         Instant until = now.get().plus(Duration.ofDays(2));
         receive(
