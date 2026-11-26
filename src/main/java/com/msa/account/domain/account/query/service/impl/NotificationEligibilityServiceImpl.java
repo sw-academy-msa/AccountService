@@ -36,6 +36,20 @@ public class NotificationEligibilityServiceImpl implements NotificationEligibili
         return NotificationEligibilityResponse.builder().eligible(eligible).build();
     }
 
+    public NotificationEligibilityResponse checkClaimCampaign(UUID accountId) {
+        boolean eligible =
+                accounts.findById(accountId)
+                        .map(
+                                a ->
+                                        a.getStatus() == AccountStatus.ACTIVE
+                                                && a.hasRole(Role.BUYER)
+                                                && !a.hasRole(Role.ADMIN)
+                                                && a.getConsent() != null
+                                                && a.getConsent().isMarketingAgreed())
+                        .orElse(false);
+        return NotificationEligibilityResponse.builder().eligible(eligible).build();
+    }
+
     public NotificationEligibilityResponse checkSaleAlert(UUID accountId) {
         boolean eligible =
                 accounts.findById(accountId)
