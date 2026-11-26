@@ -6,6 +6,9 @@ import java.util.UUID;
 
 /** 계정 상태와 현재 알림/마케팅 동의의 원본 판정은 Account가 소유합니다. */
 public interface NotificationEligibilityService {
+    /** 받기형 쿠폰 광고는 활성 비관리자 구매자의 광고 동의만 확인합니다. */
+    NotificationEligibilityResponse checkClaimCampaign(UUID accountId);
+
     NotificationEligibilityResponse check(UUID accountId);
 
     /** 거래/심사 알림이며 광고 동의와 분리합니다. */
